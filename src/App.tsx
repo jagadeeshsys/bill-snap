@@ -438,6 +438,7 @@ const updateField = (
             ref={fileInput}
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            capture="environment"
             hidden
             onChange={handleImage}
           />
