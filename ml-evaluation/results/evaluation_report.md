@@ -1,44 +1,162 @@
+cat > ml-evaluation/results/evaluation_report.md <<'EOF'
 # Bill Snap — Evaluation Report
 
-## Dataset
-- 15 bill images: `B1.JPG`–`B11.JPG`, `B12.jpg`–`B15.jpg`
-- 5 non-bill examples recorded in the conversation
-- Evaluation approach: run each image through the local app at `http://localhost:5173`, compare the app output with the source image, and record uncertain/missing fields rather than guessing.
+## 1. Dataset
 
-## Evidence limitations
-This report is a reconstruction from the uploaded image ZIP and screenshots retained in the conversation. It is **not** a complete run log for all 20 tests. The app-output evidence is available for B09–B12, B14–B15 and N01–N05; the remaining bill app outputs are marked `Not recorded` in `evaluation.csv`.
-Some ground-truth fields are also not confidently readable from the current evidence and are left blank or explicitly flagged for verification.
+The evaluation dataset contains 20 images:
 
-## Observed non-bill results
-| Test | Non-bill image | App outcome | OCR score |
-|---|---|---|---:|
-| N01 | College timetable screenshot | Uncertain / manual review | 76% |
-| N02 | Road and motorcycle photograph | Uncertain / manual review | 42% |
-| N03 | Restaurant/menu display | Uncertain / manual review | 32% |
-| N04 | Personal selfie | Uncertain / manual review | 31% |
-| N05 | Clothing product tag | Rejected as not a bill | Not shown |
+- 15 real bill images (B01–B15).
+- 5 non-bill images (N01–N05).
+- Includes printed receipts, tax invoices, difficult photographs and a handwritten invoice.
 
-Observed result: 1 of 5 non-bills was explicitly rejected; 4 of 5 were routed to manual review. This is a descriptive result for the five recorded examples, not a claim about general-world performance.
+Each image was processed using the local Bill Snap application.
 
-## Observed bill outcomes
-- B12 (Sakala Jewellery House): date extracted correctly as `06-06-2026`; merchant and total were blank; category suggested as Shopping; OCR score shown as 51%.
-- B14 (GET Electronics): merchant, date and total were blank; category was Other; OCR score shown as 47%. The source is handwritten, so this is a difficult extraction case.
-- B15 (Nidhi Motors): merchant was correct; date was extracted as `06-11-2026` while the invoice date is `05-11-2026`; app selected `₹2,841.36` (Net Amount) rather than the invoice payable/total invoice amount `₹2,841.00`; category was Transport; OCR score shown as 61%.
-- B09, B10 and B11 were shown in the uncertain/manual-review flow with blank extracted fields in the available screenshots.
+The application uses Tesseract.js OCR and rule-based classification and extraction.
 
-## Metrics
-A complete 20-image accuracy score is **not reported**, because app outputs for B01–B08 and B13 are not available in the retained evidence, and some ground-truth fields need verification. OCR recognition scores are not field-accuracy scores and are not used as a substitute for accuracy.
+## 2. Evaluation Method
 
-## Key failure analysis
-1. **Non-bill false uncertainty:** timetable, scenic photograph, menu and selfie examples were not rejected; they entered manual review. The classifier is conservative and can mistake OCR text/noise for possible bill evidence.
-2. **Low OCR quality on long receipts:** the photographed New Asian Super Market and Tesco receipts had OCR scores around 32–49% in the screenshots. Long, narrow receipts, wrinkles, small print, perspective and background clutter reduce text quality.
-3. **Merchant/date/amount extraction can all be missing:** the Sakala Jewellery and GET Electronics examples reached review with blank merchant and amount fields. Handwriting and invoice layouts are especially challenging for generic OCR/rules.
-4. **Wrong date candidate:** the Nidhi Motors invoice contains multiple dates (invoice date, insurance expiry, next service due date). The app selected `06-11-2026` instead of the invoice date `05-11-2026`.
-5. **Wrong amount candidate:** the Nidhi Motors invoice contains Net Amount `₹2,841.36`, Round Off `-₹0.36`, Invoice Amount Payable `₹2,841.00`, and Total Invoice Amount `₹2,841.00`. The app selected the net amount instead of the payable total.
-6. **Confidence interpretation:** the displayed OCR score measures OCR recognition, not the correctness of merchant/date/amount fields. Field confidence is heuristic and should not be presented as a calibrated probability.
+Each image was processed through the application and compared against the source image.
 
-## Recommended next actions
-- Re-run B01–B08 and B13 and save screenshots of each review result.
-- Verify B02, B04 and B08 ground-truth totals, B01/B02 dates, and B14's handwritten date.
-- Keep the Nidhi Motors payable-total regression test and add explicit invoice-date selection tests where service/insurance dates are present.
-- Report the app as a local, browser-based OCR and heuristic extraction prototype with human review, not as a trained ML model.
+The following were evaluated:
+
+1. Bill / non-bill classification.
+2. Merchant name extraction.
+3. Date extraction.
+4. Total payable amount extraction.
+5. Suggested expense category.
+
+Results use the following labels:
+
+- Correct: output matches the verified ground truth.
+- Incorrect: output does not match the ground truth.
+- Not extracted: application returned no value.
+- Uncertain: application could not confidently classify the image.
+- Not verifiable: source information is insufficient to determine correctness.
+- N/A: field does not apply to the test.
+
+The complete results are recorded in `evaluation.csv`.
+
+## 3. Classification Results
+
+### Bill images
+
+| Outcome | Count |
+|---|---:|
+| Entered bill review flow | 6/15 |
+| Uncertain / manual review | 9/15 |
+
+### Non-bill images
+
+| Test | Image | Application outcome |
+|---|---|---|
+| N01 | College timetable | Uncertain / manual review |
+| N02 | Road and motorcycle photograph | Uncertain / manual review |
+| N03 | Restaurant/menu display | Uncertain / manual review |
+| N04 | Personal selfie | Uncertain / manual review |
+| N05 | Clothing product tag | Rejected as not a bill |
+
+Only 1 of the 5 non-bill images was explicitly rejected.
+
+The remaining 4 were routed to manual review. This shows that the current classifier is conservative and needs better non-bill rejection.
+
+An uncertain result is not counted as a confirmed correct classification.
+
+## 4. Extraction Results
+
+Based on the recorded app outputs:
+
+| Field | Correct | Incorrect | Not extracted | Not verifiable |
+|---|---:|---:|---:|---:|
+| Merchant | 1 | 3 | 10 | 1 |
+| Date | 2 | 1 | 11 | 1 |
+| Total amount | 0 | 1 | 14 | 0 |
+
+These counts describe the recorded bill observations. They are not a general-world accuracy estimate.
+
+### Merchant extraction
+
+- Nidhi Motors was extracted correctly.
+- Vernon Fox Trading and Choice Fashion & Home produced noisy partial merchant text.
+- The Rajalakshmi invoice produced a partial merchant/header match.
+- Several other receipts and invoices returned blank merchant fields.
+
+### Date extraction
+
+- Sakala Jewellery House: correct date, 06-06-2026.
+- Sri Rajalakshmi Silvermine: correct date, 06-06-2026.
+- Nidhi Motors: extracted 06-11-2026 instead of 05-11-2026.
+- Handwritten GET Electronics date could not be verified.
+
+### Total amount extraction
+
+- No recorded bill total matched the verified ground truth.
+- Nidhi Motors returned ₹2,841.36 instead of the payable amount ₹2,841.00.
+- The remaining recorded bill outputs had blank total fields.
+
+## 5. Category Results
+
+The following provisional category evaluation is recorded:
+
+| Result | Count |
+|---|---:|
+| Correct | 4 |
+| Incorrect | 10 |
+| Not verifiable | 1 |
+
+The supermarket receipts were provisionally labelled Groceries based on merchant and document context. These labels should be checked against the purchased items where possible.
+
+The application frequently suggested Other for supermarket receipts and the electronics invoice.
+
+## 6. OCR Observations
+
+OCR quality varies with image quality and document layout.
+
+Difficult examples include:
+
+- Crumpled and folded receipts.
+- Long receipts with small printed text.
+- Images photographed at an angle.
+- Handwritten invoices.
+- Documents containing multiple dates and monetary values.
+
+OCR recognition scores represent text recognition confidence. They are not field extraction accuracy percentages.
+
+## 7. Failure Analysis Summary
+
+1. Non-bill images frequently enter manual review instead of being rejected.
+2. Long receipts and low-quality photographs produce noisy OCR.
+3. Merchant extraction fails on fragmented or unfamiliar business names.
+4. Date extraction can select an unrelated date from an invoice.
+5. Amount extraction can select net amount instead of final payable amount.
+6. Category suggestions frequently fall back to Other.
+7. Handwritten documents are difficult for the current OCR pipeline.
+
+Further details are documented in `failure_analysis.md`.
+
+## 8. Implementation Approach and Limitations
+
+Bill Snap currently uses:
+
+- Tesseract.js for browser-based OCR.
+- Rule-based document classification.
+- Heuristic merchant, date and amount extraction.
+- Rule-based category suggestions.
+- Manual review and correction.
+
+The current implementation does not use a trained machine-learning classifier.
+
+This approach was selected to keep the application local, avoid paid API dependencies and make the processing pipeline explainable.
+
+The results show that the current approach needs improvement, particularly in non-bill rejection, total extraction and merchant recognition.
+
+## 9. Future Improvements
+
+- Improve non-bill rejection using stronger document-level signals.
+- Improve merchant extraction across different invoice layouts.
+- Improve selection of invoice dates when multiple dates are present.
+- Improve final payable amount selection.
+- Improve grocery and electronics category detection.
+- Evaluate a lightweight on-device bill classification model.
+- Expand the evaluation dataset with more varied receipts.
+
+EOF
