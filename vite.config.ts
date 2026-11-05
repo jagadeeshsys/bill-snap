@@ -3,6 +3,7 @@ import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  base: '/bill-snap/',
   plugins: [
     react(),
     VitePWA({
@@ -12,21 +13,21 @@ export default defineConfig({
         name: 'Bill Snap',
         short_name: 'Bill Snap',
         description: 'Capture, extract and manage bill information locally.',
-        start_url: '/',
-        scope: '/',
+        start_url: '/bill-snap/',
+        scope: '/bill-snap/',
         display: 'standalone',
         orientation: 'portrait',
         theme_color: '#124d3a',
         background_color: '#f7f9f7',
         icons: [
           {
-            src: '/pwa-192x192.png',
+            src: '/bill-snap/pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/pwa-512x512.png',
+            src: '/bill-snap/pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable',
@@ -37,7 +38,7 @@ export default defineConfig({
         globPatterns: ['**/*.{html,js,css,woff2}'],
         cleanupOutdatedCaches: true,
         clientsClaim: true,
-        navigateFallback: '/index.html',
+        navigateFallback: '/bill-snap/index.html',
       },
     }),
   ],
