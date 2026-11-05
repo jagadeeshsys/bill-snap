@@ -4,6 +4,7 @@ import {
   extractBillData,
   markFieldUserCorrected,
 } from "../src/services/extractor.ts";
+import { classifyBillText } from "../src/services/billClassifier.ts";
 
 test("uses the invoice amount payable instead of net amount and round off", () => {
   const bill = extractBillData(
@@ -48,6 +49,19 @@ test("does not mistake a negative round-off for a payable amount", () => {
   assert.equal(bill.total.value, 5);
 });
 
+test("does not associate B02 authorization-code OCR with Balance Due", () => {
+  const bill = extractBillData(
+    [
+      "Receipt",
+      "0 BALANCE DUE",
+      "AUTH CODERS 7]",
+      "01.9",
+    ].join("\n")
+  );
+
+  assert.equal(bill.total.value, null);
+});
+
 test("uses grand total ahead of net amount when no payable label exists", () => {
   const bill = extractBillData(
     ["Net Amount ₹2,841.36", "Grand Total ₹2,841.00"].join("\n")
@@ -61,6 +75,177 @@ test("does not treat subtotal or tax payable rows as the final payable", () => {
     [
       "Subtotal Payable ₹2,900.00",
       "Tax Amount Payable ₹9,999.00",
+      "Invoice Amount Payable ₹2,841.00",
+    ].join("\n")
+  );
+
+  assert.equal(bill.total.value, 2841);
+});
+
+test("does not select total tax or tax total rows over payable amount", () => {
+  const cases = [
+    ["Total Tax ₹500.00", "Invoice Amount Payable ₹7,880.00"],
+    ["Tax Total ₹500.00", "Invoice Amount Payable ₹7,880.00"],
+  ];
+
+  for (const [taxLine, payableLine] of cases) {
+    const bill = extractBillData(
+      ["Tax Invoice", taxLine, payableLine].join("\n")
+    );
+    assert.equal(bill.total.value, 7880, taxLine);
+  }
+});
+
+test("does not select item totals, discounts, or savings as final totals", () => {
+  const excludedLines = [
+    "Item Total ₹500.00",
+    "Total Discount ₹50.00",
+    "Total Savings ₹25.00",
+    "Subtotal ₹700.00",
+    "Round Off ₹0.36",
+  ];
+
+  for (const excludedLine of excludedLines) {
+    const bill = extractBillData(
+      [
+        "Tax Invoice",
+        excludedLine,
+        "Invoice Amount Payable ₹7,880.00",
+      ].join("\n")
+    );
+    assert.equal(bill.total.value, 7880, excludedLine);
+  }
+});
+
+test("does not extract Total Tax as a payable total by itself", () => {
+  const bill = extractBillData("Total Tax ₹500.00");
+
+  assert.equal(bill.total.value, null);
+});
+
+test("does not extract Tax Total as a payable total by itself", () => {
+  const bill = extractBillData("Tax Total ₹500.00");
+
+  assert.equal(bill.total.value, null);
+});
+
+test("does not extract Item Total as a payable total by itself", () => {
+  const bill = extractBillData("Item Total ₹500.00");
+
+  assert.equal(bill.total.value, null);
+});
+
+test("does not extract Total Discount as a payable total by itself", () => {
+  const bill = extractBillData("Total Discount ₹50.00");
+
+  assert.equal(bill.total.value, null);
+});
+
+test("does not extract Total Savings as a payable total by itself", () => {
+  const bill = extractBillData("Total Savings ₹25.00");
+
+  assert.equal(bill.total.value, null);
+});
+
+test("Invoice Amount Payable takes precedence over Grand Total", () => {
+  const bill = extractBillData(
+    [
+      "Tax Invoice",
+      "Grand Total ₹7,900.00",
+      "Invoice Amount Payable ₹7,880.00",
+    ].join("\n")
+  );
+
+  assert.equal(bill.total.value, 7880);
+});
+
+test("extracts B13 total amount with comma-independent INR numeric text", () => {
+  const bill = extractBillData(
+    ["Tax Invoice", "Total Amount: 7880.00"].join("\n")
+  );
+
+  assert.equal(bill.total.value, 7880);
+});
+
+test("extracts GBP totals from evaluation receipt OCR labels", () => {
+  const cases = [
+    ["Total GBP 13.50", 13.5],
+    ["Total £12.20", 12.2],
+    ["TOTAL £63.93", 63.93],
+  ];
+
+  for (const [text, expected] of cases) {
+    const bill = extractBillData(["Receipt", text].join("\n"));
+    assert.equal(bill.total.value, expected, text);
+  }
+});
+
+test("does not treat a number embedded in corrupted OCR text as a total", () => {
+  const bill = extractBillData("De 2SC riptio ion Total");
+
+  assert.equal(bill.total.value, null);
+});
+
+test("extracts the B06 GBP total without an embedded OCR fragment", () => {
+  const bill = extractBillData("TOTAL GBP 13.50");
+
+  assert.equal(bill.total.value, 13.5);
+});
+
+test("ignores an embedded OCR number when extracting the B06 GBP total", () => {
+  const bill = extractBillData(
+    ["De 2SC riptio ion Total", "TOTAL GBP 13.50"].join("\n")
+  );
+
+  assert.equal(bill.total.value, 13.5);
+});
+
+test("extracts the B06 total from complete receipt OCR with medium confidence", () => {
+  const bill = extractBillData(
+    [
+      "FASHION & HOME OUTLET",
+      "Clacton on Sea CO15 4TL",
+      "CHOICE - CLACTON",
+      "CLACTON FACTORY",
+      "STEPHENSON ROAD WEST",
+      "CLACTON-ON-SEA, ESSEX, CO15",
+      "",
+      "01/10/2026 17:40:14",
+      "",
+      "SALE (BP13.50",
+      "TOTAL GBP 13.50",
+      "PLEASE DEBIT MY AC OUNT",
+    ].join("\n")
+  );
+
+  assert.equal(bill.total.value, 13.5);
+  assert.equal(bill.total.confidence, "medium");
+});
+
+test("extracts total paid and comma-grouped amounts without assuming INR", () => {
+  const bill = extractBillData(
+    ["Receipt", "Total Paid GBP 2,841.00"].join("\n")
+  );
+
+  assert.equal(bill.total.value, 2841);
+});
+
+test("keeps conflicting equally ranked final totals uncertain", () => {
+  const bill = extractBillData(
+    ["Receipt", "Total £12.20", "Total £13.20"].join("\n")
+  );
+
+  assert.equal(bill.total.value, null);
+  assert.equal(bill.total.confidence, "low");
+});
+
+test("B15 payable total takes precedence over net, round-off, and item values", () => {
+  const bill = extractBillData(
+    [
+      "Tax Invoice",
+      "Item Amount ₹257.93",
+      "Net Amount ₹2,841.36",
+      "Round Off -₹0.36",
       "Invoice Amount Payable ₹2,841.00",
     ].join("\n")
   );
@@ -181,6 +366,100 @@ test("does not return an uncertain merchant from OCR fragments or metadata", () 
   assert.equal(bill.merchant.confidence, "low");
 });
 
+test("retains the B02 Sainsbury's candidate without inventing fields", () => {
+  const text = [
+    "ny",
+    "Sainsbury's",
+    "ood for all",
+    "HADLETGH Jel ofus",
+    "01473 286660",
+    "Salnsburyls Superuarkets Lid",
+    "Char ter NoUSE Street | ondor ECIM lA",
+    "We. S81 nsburys, co , uk",
+    "Vat Number . 660 4548 36",
+  ].join("\n");
+  const classification = classifyBillText(text);
+  const bill = extractBillData(text);
+
+  assert.equal(classification.status, "uncertain");
+  assert.equal(bill.isBill, false);
+  assert.equal(bill.merchant.value, "SAINSBURY'S");
+  assert.equal(bill.date.value, null);
+  assert.equal(bill.total.value, null);
+});
+
+test("a merchant-like word does not turn a classified non-bill into a bill", () => {
+  const text =
+    "TESCO Government of India Aadhaar Card Name Date of Birth Gender Address";
+  const classification = classifyBillText(text);
+  const bill = extractBillData(text);
+
+  assert.equal(classification.status, "not_bill");
+  assert.equal(bill.isBill, false);
+});
+
+test("extracts plausible single-token supermarket merchant headers", () => {
+  const cases = [
+    ["Sainsbury's", "SAINSBURY'S"],
+    ["Tesco", "TESCO"],
+    ["NEW ASIAN SUPER MARKET", "NEW ASIAN SUPER MARKET"],
+    ["Sri Rajalakshmi Silvermine", "SRI RAJALAKSHMI SILVERMINE"],
+  ];
+
+  for (const [merchant, expected] of cases) {
+    const bill = extractBillData(
+      [merchant, "Receipt", "Total £12.20"].join("\n")
+    );
+    assert.equal(bill.merchant.value, expected, merchant);
+  }
+});
+
+test("does not select generic store and sales headings as merchants", () => {
+  for (const heading of ["STORE", "SALES"]) {
+    const bill = extractBillData(
+      [heading, "Receipt", "Total £12.20"].join("\n")
+    );
+    assert.equal(bill.merchant.value, null, heading);
+  }
+});
+
+test("prefers the invoice merchant over an affiliation description", () => {
+  const bill = extractBillData(
+    [
+      "A UNIT OF RAJALAKSHMI JEWELLERY MART",
+      "SRI RAJALAKSHMI SILVERMINE",
+      "Tax Invoice",
+      "Total Amount 7880.00",
+    ].join("\n")
+  );
+
+  assert.equal(bill.merchant.value, "SRI RAJALAKSHMI SILVERMINE");
+});
+
+test("retains an affiliation-only merchant candidate with low confidence", () => {
+  const bill = extractBillData(
+    [
+      "A UNIT OF RAJALAKSHMI JEWELLERY MART",
+      "Tax Invoice",
+      "Total Amount 7880.00",
+    ].join("\n")
+  );
+
+  assert.equal(
+    bill.merchant.value,
+    "A UNIT OF RAJALAKSHMI JEWELLERY MART"
+  );
+  assert.equal(bill.merchant.confidence, "low");
+});
+
+test("preserves partial merchant OCR without inventing missing text", () => {
+  const bill = extractBillData(
+    ["OICE JB", "Receipt", "Total GBP 13.50"].join("\n")
+  );
+
+  assert.equal(bill.merchant.value, "OICE JB");
+});
+
 test("extracts labeled invoice dates in common Indian formats", () => {
   const cases = [
     ["Invoice Date: 06/06/2026", "06-06-2026"],
@@ -197,6 +476,153 @@ test("extracts labeled invoice dates in common Indian formats", () => {
 
     assert.equal(bill.date.value, expected, dateLine);
   }
+});
+
+test("extracts abbreviated month dates in compact and spaced OCR formats", () => {
+  const cases = [
+    ["Invoice Date: 03NOV2026", "03-11-2026"],
+    ["Invoice Date: 03 Nov 2026", "03-11-2026"],
+    ["Invoice Date: 03-NOV-2026", "03-11-2026"],
+    ["Invoice Date: 03-nOv-2026", "03-11-2026"],
+  ];
+
+  for (const [dateLine, expected] of cases) {
+    const bill = extractBillData(
+      [dateLine, "Total £12.20"].join("\n")
+    );
+    assert.equal(bill.date.value, expected, dateLine);
+  }
+});
+
+test("rejects invalid abbreviated month dates and transaction/card dates", () => {
+  const invalidDate = extractBillData(
+    ["Invoice Date: 31-NOV-2026", "Total £12.20"].join("\n")
+  );
+  const unrelatedDate = extractBillData(
+    [
+      "Transaction Date: 03NOV2026",
+      "Card Expiry: 03NOV2028",
+      "Total £12.20",
+    ].join("\n")
+  );
+
+  assert.equal(invalidDate.date.value, null);
+  assert.equal(unrelatedDate.date.value, null);
+});
+
+test("does not use Date of Transaction as an invoice date", () => {
+  const bill = extractBillData(
+    [
+      "Date of Transaction: 03NOV2026",
+      "Receipt",
+      "Total £12.20",
+    ].join("\n")
+  );
+
+  assert.equal(bill.date.value, null);
+});
+
+test("extracts an unlabelled B06 receipt date after product and payment lines", () => {
+  const bill = extractBillData(
+    [
+      "FASHION & HOME OUTLET",
+      "Clacton on Sea CO15 4TL",
+      "CHOICE - CLACTON",
+      "CLACTON FACTORY",
+      "STEPHENSON ROAD WEST",
+      "CLACTON-ON-SEA, ESSEX, CO15",
+      "ITEM 1 GBP 2.00",
+      "ITEM 2 GBP 3.00",
+      "ITEM 3 GBP 4.00",
+      "ITEM 4 GBP 4.50",
+      "CARD PAYMENT",
+      "VISA",
+      "APPROVED",
+      "AID A000000000",
+      "L",
+      "01/10/2026 17:40:14",
+      "RECEIPT NO. :10017]",
+      "SALE GBP13.50",
+      "TOTAL GBP 13.50",
+    ].join("\n")
+  );
+
+  assert.equal(bill.date.value, "01-10-2026");
+});
+
+test("extracts an unlabelled date within the first twelve OCR lines", () => {
+  const bill = extractBillData(
+    ["Store", "01/10/2026", "Receipt", "Total GBP 13.50"].join("\n")
+  );
+
+  assert.equal(bill.date.value, "01-10-2026");
+});
+
+test("an explicit invoice date takes priority over later unlabelled dates", () => {
+  const bill = extractBillData(
+    [
+      "Invoice Date: 01/10/2026",
+      "Transaction information",
+      "Card payment recorded",
+      "12/10/2026",
+      "Receipt",
+      "Total GBP 13.50",
+    ].join("\n")
+  );
+
+  assert.equal(bill.date.value, "01-10-2026");
+});
+
+test("excludes unlabelled transaction, payment, and card dates", () => {
+  const bill = extractBillData(
+    [
+      "Transaction Date: 02/10/2026",
+      "Payment Date: 03/10/2026",
+      "Card Expiry: 04/10/2026",
+      "Valid Thru: 05/10/2026",
+      "Receipt",
+      "Total GBP 13.50",
+    ].join("\n")
+  );
+
+  assert.equal(bill.date.value, null);
+});
+
+test("does not choose between conflicting unlabelled dates", () => {
+  const bill = extractBillData(
+    [
+      "Date printed 01/10/2026",
+      "Date printed 02/10/2026",
+      "Receipt",
+      "Total GBP 13.50",
+    ].join("\n")
+  );
+
+  assert.equal(bill.date.value, null);
+  assert.equal(bill.date.confidence, "low");
+});
+
+test("rejects an invalid unlabelled date beyond the first twelve lines", () => {
+  const bill = extractBillData(
+    [
+      "Receipt",
+      "Product line 1",
+      "Product line 2",
+      "Product line 3",
+      "Product line 4",
+      "Product line 5",
+      "Product line 6",
+      "Product line 7",
+      "Product line 8",
+      "Product line 9",
+      "Product line 10",
+      "Product line 11",
+      "31/02/2026",
+      "Total GBP 13.50",
+    ].join("\n")
+  );
+
+  assert.equal(bill.date.value, null);
 });
 
 test("prefers the labeled invoice date over unrelated future dates", () => {

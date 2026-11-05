@@ -42,6 +42,7 @@ import {
 import type { SavedBill } from "./services/storage";
 import { summarizeMonthlyBills } from "./services/dashboardMetrics";
 import { formatCurrency } from "./services/currency";
+import type { OCRResult } from "./services/ocrEvidence";
 
 import "./App.css";
 
@@ -107,6 +108,7 @@ function App() {
   const [billData, setBillData] = useState<ExtractedBill | null>(null);
   const [totalInput, setTotalInput] = useState("");
   const [ocrConfidence, setOcrConfidence] = useState<number | null>(null);
+  const [ocrEvidence, setOcrEvidence] = useState<OCRResult | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [duplicateWarning, setDuplicateWarning] =
@@ -153,6 +155,7 @@ function App() {
     setDuplicateWarning(null);
     setBillData(null);
     setOcrConfidence(null);
+    setOcrEvidence(null);
     setProgress(0);
     setIsProcessing(true);
 
@@ -166,8 +169,17 @@ function App() {
 
       const processed = await processBillImage(
         result.file,
-        setProgress
+        setProgress,
+        result.wasDownscaled ? file : undefined,
+        result.wasDownscaled
+          ? {
+              width: result.originalWidth,
+              height: result.originalHeight,
+            }
+          : undefined
       );
+
+      setOcrEvidence(processed.ocrEvidence);
 
       if (processed.classification?.status === "uncertain") {
         setImageError(
@@ -213,6 +225,7 @@ function App() {
     setDuplicateWarning(null);
     setProgress(0);
     setOcrConfidence(null);
+    setOcrEvidence(null);
   };
 
  
@@ -523,21 +536,97 @@ const updateField = (
                 {" · "}This is an OCR score, not field accuracy.
               </p>
             )}
-            <details>
-            <summary>View raw OCR text (debug)</summary>
-             <pre
-              style={{
-                        whiteSpace: "pre-wrap",
-                        fontSize: "12px",
-                         overflowWrap: "anywhere",
-                        padding: "12px",
-                        background: "#f1f5f9",
-                       borderRadius: "8px",
-                    }}
-                        >
-                     {billData.rawText}
-                       </pre>
-                      </details>
+            {ocrEvidence && (
+              <details className="ocr-diagnostics">
+                <summary>OCR diagnostics (advanced)</summary>
+                <section className="ocr-diagnostic-section">
+                  <h3>Primary OCR text (used for extraction)</h3>
+                  <dl className="ocr-pass-metadata">
+                    <div>
+                      <dt>Source</dt>
+                      <dd>{ocrEvidence.primaryFullPage.source}</dd>
+                    </div>
+                    <div>
+                      <dt>Page segmentation mode</dt>
+                      <dd>{ocrEvidence.primaryFullPage.pageSegmentationMode}</dd>
+                    </div>
+                    <div>
+                      <dt>Image dimensions</dt>
+                      <dd>
+                        {ocrEvidence.primaryFullPage.width} ×{" "}
+                        {ocrEvidence.primaryFullPage.height}px
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>OCR confidence</dt>
+                      <dd>{Math.round(ocrEvidence.primaryFullPage.confidence)}%</dd>
+                    </div>
+                  </dl>
+                  <pre className="ocr-diagnostic-text">
+                    {ocrEvidence.primaryFullPage.text || "(No text recognized)"}
+                  </pre>
+                </section>
+
+                {ocrEvidence.passes.some(
+                  (pass) => pass !== ocrEvidence.primaryFullPage
+                ) && (
+                  <section className="ocr-diagnostic-section">
+                    <h3>Alternate OCR results (not used for extraction)</h3>
+                    <div className="ocr-pass-list">
+                      {ocrEvidence.passes
+                        .filter(
+                          (pass) => pass !== ocrEvidence.primaryFullPage
+                        )
+                        .map((pass, index) => (
+                          <details key={`${pass.source}-${index}`}>
+                            <summary>{pass.source}</summary>
+                            <dl className="ocr-pass-metadata">
+                              <div>
+                                <dt>Page segmentation mode</dt>
+                                <dd>{pass.pageSegmentationMode}</dd>
+                              </div>
+                              <div>
+                                <dt>Image dimensions</dt>
+                                <dd>
+                                  {pass.width} × {pass.height}px
+                                </dd>
+                              </div>
+                              <div>
+                                <dt>OCR confidence</dt>
+                                <dd>{Math.round(pass.confidence)}%</dd>
+                              </div>
+                              <div>
+                                <dt>Source region</dt>
+                                <dd>
+                                  {pass.region
+                                    ? `${Math.round(pass.region.left * 100)}%, ${Math.round(pass.region.top * 100)}%, ${Math.round(pass.region.width * 100)}% × ${Math.round(pass.region.height * 100)}%`
+                                    : "Full image"}
+                                </dd>
+                              </div>
+                            </dl>
+                            <pre className="ocr-diagnostic-text">
+                              {pass.text || "(No text recognized)"}
+                            </pre>
+                          </details>
+                        ))}
+                    </div>
+                  </section>
+                )}
+
+                {ocrEvidence.failures.length > 0 && (
+                  <section className="ocr-diagnostic-section">
+                    <h3>OCR passes that did not complete</h3>
+                    <ul className="ocr-pass-failures">
+                      {ocrEvidence.failures.map((failure, index) => (
+                        <li key={`${failure.source}-${index}`}>
+                          <strong>{failure.source}</strong>: {failure.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                )}
+              </details>
+            )}
 
             <div className="review-field">
               <label className="field-label" htmlFor="merchant">

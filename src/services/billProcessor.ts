@@ -4,6 +4,7 @@ import {
   classifyBillText,
   type BillClassification,
 } from "./billClassifier";
+import type { OCRResult } from "./ocrEvidence";
 
 export interface ProcessedBillResult {
   success: boolean;
@@ -11,11 +12,14 @@ export interface ProcessedBillResult {
   data: ReturnType<typeof extractBillData> | null;
   ocrConfidence: number | null;
   classification: BillClassification | null;
+  ocrEvidence: OCRResult | null;
 }
 
 export async function processBillImage(
   image: File,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
+  originalImage?: File,
+  originalDimensions?: { width: number; height: number }
 ): Promise<ProcessedBillResult> {
   try {
     if (!image.type.startsWith("image/")) {
@@ -28,21 +32,12 @@ export async function processBillImage(
       image,
       (progress) => {
         onProgress?.(10 + progress * 0.8);
-      }
+      },
+      originalImage,
+      originalDimensions
     );
 
-    /*
-     * Put the focused invoice-region OCR first.
-     * Keep the complete OCR text for the remaining fields.
-     */
-    const combinedText = [
-      ocrResult.dateRegionText,
-      ocrResult.text,
-    ]
-      .filter(Boolean)
-      .join("\n\n");
-
-    const classification = classifyBillText(combinedText);
+    const classification = classifyBillText(ocrResult.primaryFullPage.text);
     onProgress?.(100);
 
     if (classification.status === "not_bill") {
@@ -53,10 +48,11 @@ export async function processBillImage(
         data: null,
         ocrConfidence: ocrResult.confidence,
         classification,
+        ocrEvidence: ocrResult,
       };
     }
 
-    const billData = extractBillData(combinedText);
+    const billData = extractBillData(ocrResult);
 
     return {
       success: true,
@@ -64,6 +60,7 @@ export async function processBillImage(
       data: billData,
       ocrConfidence: ocrResult.confidence,
       classification,
+      ocrEvidence: ocrResult,
     };
   } catch (error) {
     return {
@@ -75,6 +72,7 @@ export async function processBillImage(
       data: null,
       ocrConfidence: null,
       classification: null,
+      ocrEvidence: null,
     };
   }
 }

@@ -1,4 +1,6 @@
 
+import type { OCRResult } from "./ocrEvidence";
+
 export type ExpenseCategory =
   | "Food"
   | "Groceries"
@@ -120,6 +122,9 @@ function extractMerchant(text: string): ExtractedField<string> {
     /\b(?:tax\s+invoice|invoice|cash\s*memo|receipt|estimate|quotation)\b/i;
   const businessSuffix =
     /\b(?:motors?|jewell?ers?|traders?|stores?|enterprises?|services?|restaurant|supermarket|industries|hospital|medical|agency|limited|ltd|llp|private|pvt)\b/i;
+  const affiliationDescription = /^\s*a\s+unit\s+of\b/i;
+  const genericMerchantHeading =
+    /^(?:store|sales|shop|business|company|merchant|customer|supplier|details|particulars|description|date|total|cash|tax|payment|address|phone|contact|welcome|thank\s+you)$/i;
   const merchantFieldLabel =
     /^(?:merchant|business\s*name|store\s*name|shop\s*name|company\s*name|name)\s*[:.-]\s*/i;
 
@@ -139,6 +144,10 @@ function extractMerchant(text: string): ExtractedField<string> {
       const letters = (line.match(/\p{L}/gu) ?? []).length;
       const digits = (line.match(/\d/g) ?? []).length;
       const words = line.match(/[\p{L}]+/gu) ?? [];
+      const singleWordHeader =
+        words.length === 1 &&
+        index < 8 &&
+        !genericMerchantHeading.test(line);
 
       if (
         line.length < 3 ||
@@ -146,10 +155,14 @@ function extractMerchant(text: string): ExtractedField<string> {
         letters < 3 ||
         digits >= 4 ||
         genericHeader.test(line) ||
+        (genericMerchantHeading.test(line) && !hasMerchantLabel) ||
         copyDesignation.test(originalLine) ||
         documentTitle.test(line) ||
         excludedLine.test(line) ||
-        (words.length < 2 && !businessSuffix.test(line) && !hasMerchantLabel) ||
+        (words.length < 2 &&
+          !businessSuffix.test(line) &&
+          !hasMerchantLabel &&
+          !singleWordHeader) ||
         /\b(?:\+?91[\s-]?)?[6-9]\d{9}\b/.test(line) ||
         /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(line) ||
         /(?:https?:\/\/|www\.)/i.test(line)
@@ -163,6 +176,8 @@ function extractMerchant(text: string): ExtractedField<string> {
       if (hasMerchantLabel) score += 25;
       if (businessSuffix.test(line)) score += 20;
       if (words.length >= 2) score += 10;
+      if (singleWordHeader) score += 10;
+      if (affiliationDescription.test(line)) score -= 35;
       if (line === line.toUpperCase()) score += 5;
       if (digits > 0) score -= 15;
 
@@ -224,18 +239,34 @@ function extractMerchant(text: string): ExtractedField<string> {
     .sort((a, b) => b.score - a.score || a.index - b.index);
   const selected = distinctCandidates[0];
 
-  if (!selected || selected.score < 65) {
+  if (!selected) {
+    return makeField<string>(null, "low");
+  }
+
+  if (selected.score < 65) {
+    if (affiliationDescription.test(selected.line)) {
+      return makeField(selected.line.toUpperCase(), "low");
+    }
+
     return makeField<string>(null, "low");
   }
 
   const secondCandidate = distinctCandidates[1];
-  const confidence =
+  const isUnlabeledSingleWord =
+    (selected.line.match(/[\p{L}]+/gu) ?? []).length === 1 &&
+    !merchantFieldLabel.test(getLines(text)[selected.index] ?? "") &&
+    !businessSuffix.test(selected.line);
+  const rankedConfidence =
     secondCandidate && selected.score - secondCandidate.score < 10
       ? "low"
       : selected.score >= 80 &&
           (!secondCandidate || selected.score - secondCandidate.score >= 15)
         ? "high"
         : "medium";
+  const confidence =
+    isUnlabeledSingleWord && rankedConfidence === "high"
+      ? "medium"
+      : rankedConfidence;
 
   return makeField(
     selected.line.toUpperCase(),
@@ -249,15 +280,22 @@ function extractMerchant(text: string): ExtractedField<string> {
 
 function findDates(line: string): string[] {
   const dates: string[] = [];
-
-  for (const match of line.matchAll(
-    /\b(\d{1,2})[./-](\d{1,2})[./-](\d{4})\b/g
-  )) {
-    const day = Number(match[1]);
-    const month = Number(match[2]);
-    const year = Number(match[3]);
-
-    if (year < 1000 || year > 9999) continue;
+  const monthNumbers: Record<string, number> = {
+    JAN: 1,
+    FEB: 2,
+    MAR: 3,
+    APR: 4,
+    MAY: 5,
+    JUN: 6,
+    JUL: 7,
+    AUG: 8,
+    SEP: 9,
+    OCT: 10,
+    NOV: 11,
+    DEC: 12,
+  };
+  const addDate = (day: number, month: number, year: number) => {
+    if (year < 1000 || year > 9999) return;
 
     const date = new Date(Date.UTC(year, month - 1, day));
 
@@ -269,7 +307,7 @@ function findDates(line: string): string[] {
       date.getUTCMonth() !== month - 1 ||
       date.getUTCDate() !== day
     ) {
-      continue;
+      return;
     }
 
     dates.push(
@@ -278,6 +316,21 @@ function findDates(line: string): string[] {
         "0"
       )}-${year}`
     );
+  };
+
+  for (const match of line.matchAll(
+    /\b(\d{1,2})[./-](\d{1,2})[./-](\d{4})\b/g
+  )) {
+    addDate(Number(match[1]), Number(match[2]), Number(match[3]));
+  }
+
+  for (const match of line.matchAll(
+    /(?<![\p{L}\d])(\d{1,2})\s*[-./]?\s*(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s*[-./]?\s*(\d{4})(?![\p{L}\d])/giu
+  )) {
+    const month = monthNumbers[match[2].toUpperCase()];
+    if (month) {
+      addDate(Number(match[1]), month, Number(match[3]));
+    }
   }
 
   return dates;
@@ -288,7 +341,7 @@ function extractDate(text: string): ExtractedField<string> {
   const invoiceDateLabel =
     /\b(?:invoice\s*date|bill\s*date|receipt\s*date|date\s*of\s*(?:purchase|issue|invoice)|invoice\s*dale|invoicedate|billdate)\b/i;
   const excludedDateLabel =
-    /\b(?:next\s*service\s*due|service\s*due|insurance\s*expiry|expiry|delivery\s*date|payment\s*due\s*date|warranty\s*expiry)\b/i;
+    /\b(?:next\s*service\s*due|service\s*due|insurance\s*expiry|expiry|delivery\s*date|payment\s*due\s*date|warranty\s*expiry|date\s*of\s*transaction|transaction\s*date|card\s*(?:date|expiry)|valid\s*(?:thru|through)|authorization\s*date|payment\s*date)\b/i;
   const invoiceNumberLabel =
     /\b(?:invoice|bill|receipt)\s*(?:no|number|#)\b/i;
 
@@ -365,9 +418,9 @@ function extractDate(text: string): ExtractedField<string> {
     return makeField<string>(null, "low");
   }
 
-  const headerDates = new Set<string>();
+  const unlabelledDates = new Set<string>();
 
-  lines.slice(0, 12).forEach((line) => {
+  lines.forEach((line) => {
     if (
       excludedDateLabel.test(line) ||
       invoiceNumberLabel.test(line)
@@ -375,11 +428,11 @@ function extractDate(text: string): ExtractedField<string> {
       return;
     }
 
-    findDates(line).forEach((date) => headerDates.add(date));
+    findDates(line).forEach((date) => unlabelledDates.add(date));
   });
 
-  if (headerDates.size === 1) {
-    return makeField([...headerDates][0], "medium");
+  if (unlabelledDates.size === 1) {
+    return makeField([...unlabelledDates][0], "medium");
   }
 
   return makeField<string>(null, "low");
@@ -391,7 +444,7 @@ function extractDate(text: string): ExtractedField<string> {
 
 function extractMoneyValues(line: string): number[] {
   const amountPattern =
-    /(?:^|[^\d.,])(-\s*)?(?:₹|INR\b|Rs\.?)?\s*(-?\d[\d,]*(?:\.\d{1,2})?)(?![\d.,])/gi;
+    /(?:^|[^\d.,\p{L}])(-\s*)?(?:₹|INR\b|Rs\.?)?\s*(-?\d[\d,]*(?:\.\d{1,2})?)(?![\d.,\p{L}])/giu;
   const amounts: number[] = [];
 
   for (const match of line.matchAll(amountPattern)) {
@@ -418,9 +471,21 @@ function extractMoneyValues(line: string): number[] {
   return amounts;
 }
 
+function isStandaloneNearbyAmount(line: string): boolean {
+  const amountOnlyPattern =
+    /^\s*(?:(?:₹|£|€|\$)\s*|(?:INR|GBP|EUR|USD|Rs\.?)\s*)?\d[\d,]*(?:\.\d{2})?(?:\s*\/-)?\s*$/i;
+  const hasCurrency =
+    /(?:₹|£|€|\$|\b(?:INR|GBP|EUR|USD|Rs\.?)\b)/i.test(line);
+  const hasTwoDecimalPlaces = /\d[\d,]*\.\d{2}(?!\d)/.test(line);
+
+  return (
+    amountOnlyPattern.test(line) &&
+    (hasCurrency || hasTwoDecimalPlaces)
+  );
+}
+
 function extractTotal(text: string): ExtractedField<number> {
   const lines = getLines(text);
-
   const totalLabels = [
     {
       pattern: /\binvoice\s*amount\s*payable\b/i,
@@ -455,8 +520,20 @@ function extractTotal(text: string): ExtractedField<number> {
       score: 170,
     },
     {
+      pattern: /\btotal\s*amount\b/i,
+      score: 160,
+    },
+    {
       pattern: /\btotal\s*invoice\b/i,
       score: 160,
+    },
+    {
+      pattern: /\btotal\s*paid\b/i,
+      score: 150,
+    },
+    {
+      pattern: /\btotal\b/i,
+      score: 145,
     },
     {
       pattern: /\bnet\s*bill\s*value\b/i,
@@ -478,7 +555,7 @@ function extractTotal(text: string): ExtractedField<number> {
   }[] = [];
 
   const nonTotalLabels =
-  /\b(?:gst|tax\s+(?:amount\s+)?payable|sub\s*total|round\s*off|item\s*(?:total|amount)|unit\s*price)\b/i;
+    /\b(?:total\s+tax|tax\s+total|gst|tax\s+(?:amount\s+)?payable|sub\s*total|round\s*off|item\s*(?:total|amount)|unit\s*price|discount|coupon|savings)\b/i;
 
   lines.forEach((line, index) => {
   const normalized = line.toLowerCase();
@@ -532,6 +609,8 @@ function extractTotal(text: string): ExtractedField<number> {
         continue;
       }
 
+      if (!isStandaloneNearbyAmount(nearbyLine)) continue;
+
       const values = extractMoneyValues(nearbyLine);
 
       if (values.length) {
@@ -571,6 +650,10 @@ function extractTotal(text: string): ExtractedField<number> {
     Number.NEGATIVE_INFINITY,
     ...competingScores
   );
+  if (strongestCompetitor === selected.score) {
+    return makeField<number>(null, "low");
+  }
+
   const confidence =
     strongestCompetitor >= selected.score - 25
       ? "low"
@@ -647,7 +730,8 @@ function extractCategory(
 // MAIN BILL EXTRACTION FUNCTION
 // --------------------------------------------------
 
-export function extractBillData(text: string): ExtractedBill {
+export function extractBillData(input: string | OCRResult): ExtractedBill {
+  const text = typeof input === "string" ? input : input.primaryFullPage.text;
   const lower = text.toLowerCase();
 
   const keywordCount = BILL_KEYWORDS.filter((keyword) =>
@@ -657,20 +741,21 @@ export function extractBillData(text: string): ExtractedBill {
   const hasAmount = /\d+[.,]\d{2}/.test(text);
   const isBill = keywordCount >= 1 && hasAmount;
 
+  const merchant = extractMerchant(text);
+  const date = extractDate(text);
+  const total = extractTotal(text);
+
   if (!isBill) {
     return {
       isBill: false,
-      merchant: makeField<string>(null, "low"),
-      date: makeField<string>(null, "low"),
-      total: makeField<number>(null, "low"),
+      merchant,
+      date,
+      total,
       category: makeField<ExpenseCategory>(null, "low"),
       rawText: text,
     };
   }
 
-  const merchant = extractMerchant(text);
-  const date = extractDate(text);
-  const total = extractTotal(text);
   const category = extractCategory(text, merchant.value);
 
   return {
