@@ -3,6 +3,7 @@ import { createGrayscaleContrastImage } from "./image";
 import {
   captureOptionalOCRPass,
   combineOCRPasses,
+  createOCRPassResult,
   shouldRunOriginalResolutionOCR,
   shouldRunOCRComparison,
   type OCRPassFailure,
@@ -42,21 +43,15 @@ async function recognizePass(
     await worker.setParameters({
       tessedit_pageseg_mode: options.mode,
     });
-    const result = await worker.recognize(
-      image,
-      {},
-      { text: true }
-    );
+    const result = await worker.recognize(image, {}, { text: true, blocks: true });
 
-    return {
+    return createOCRPassResult(result.data, {
       source: options.source,
-      text: result.data.text.trim(),
-      confidence: result.data.confidence,
       pageSegmentationMode: options.mode,
       region: options.region ?? null,
       width: options.width,
       height: options.height,
-    };
+    });
   });
 }
 
@@ -133,8 +128,8 @@ export async function extractTextFromImage(
         source: "processed-header-region",
         mode: PSM.SPARSE_TEXT,
         region: headerRegion,
-        width: cropWidth,
-        height: cropHeight,
+        width: canvas.width,
+        height: canvas.height,
       });
       },
       failures
