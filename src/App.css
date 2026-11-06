@@ -1173,6 +1173,61 @@ h1 {
   margin-top: 11px;
 }
 
+.scan-page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.scan-page-heading h1,
+.scan-page-heading h2 {
+  margin: 6px 0 0;
+  font-size: 22px;
+  letter-spacing: -0.6px;
+}
+
+.scan-page-heading .muted {
+  margin-top: 4px;
+}
+
+.local-scan-note {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 11px;
+  border: 1px solid #e3eee7;
+  border-radius: 999px;
+  background: #f7fbf8;
+  color: #567365;
+  font-size: 11px;
+}
+
+.local-scan-note .local-indicator {
+  width: 6px;
+  height: 6px;
+}
+
+.upload-dropzone .scan-actions {
+  width: min(100%, 390px);
+  margin-top: 10px;
+}
+
+.upload-dropzone .scan-actions button {
+  min-height: 44px;
+}
+
+.privacy-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  color: #8a9890;
+  font-size: 10px;
+}
+
 .scan-button,
 .upload-button {
   min-height: 42px;
@@ -1231,15 +1286,102 @@ h1 {
 .image-preview-panel img {
   display: block;
   width: 100%;
-  max-height: 340px;
-  margin: 14px 0;
-  border-radius: 10px;
-  background: #f3f6f4;
+  max-height: 560px;
+  margin: 14px 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f4f6f5;
   object-fit: contain;
 }
 
-.image-preview-panel > .muted {
+.image-preview-panel .preview-file-name {
+  margin: 0;
+  overflow: hidden;
+  color: var(--muted);
   font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.change-photo-button {
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.image-preview-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+}
+
+.receipt-image-button {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  text-align: center;
+}
+
+.receipt-image-button img {
+  margin-bottom: 7px;
+}
+
+.receipt-image-button span {
+  font-size: 10px;
+}
+
+.receipt-image-button:focus-visible {
+  border-radius: 12px;
+  outline: 3px solid #83cbb1;
+  outline-offset: 3px;
+}
+
+.receipt-photo-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(12 20 16 / 84%);
+  backdrop-filter: blur(4px);
+}
+
+.receipt-photo-dialog {
+  display: flex;
+  width: min(100%, 960px);
+  max-height: min(92dvh, 1100px);
+  flex-direction: column;
+  padding: 14px;
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.receipt-photo-dialog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.receipt-photo-dialog-heading strong {
+  font-size: 14px;
+}
+
+.receipt-photo-dialog > img {
+  width: 100%;
+  min-height: 0;
+  max-height: calc(92dvh - 82px);
+  border-radius: 9px;
+  background: #101914;
+  object-fit: contain;
 }
 
 .icon-button {
@@ -1287,6 +1429,80 @@ h1 {
   color: #a76b1e;
   font-size: 10px;
   font-weight: 650;
+}
+
+.review-badge.ready {
+  background: #edf8f1;
+  color: #16704b;
+}
+
+.review-badge.attention {
+  background: #fff6e8;
+  color: #a76b1e;
+}
+
+.review-group {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel) 94%, var(--canvas));
+}
+
+.review-group h3 {
+  margin: 0 0 11px;
+  color: #64746a;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.review-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.review-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.review-field .field-label {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.review-field .field-confidence {
+  grid-column: 2;
+  grid-row: 1;
+  text-align: right;
+}
+
+.review-field .review-input {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+.review-field #bill-date-help {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  text-align: left;
+}
+
+.payment-group .review-field:first-child .review-input {
+  min-height: 52px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.category-group .review-field {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.category-group .review-input {
+  grid-row: 2;
 }
 
 .ocr-diagnostics {
@@ -2248,4 +2464,154 @@ html[data-theme="dark"] .analytics-no-data,
 html[data-theme="dark"] .settings-explanation,
 html[data-theme="dark"] .settings-field > small {
   color: #9daca2;
+}
+
+/* Focused receipt capture and review workspace. */
+.dashboard.scan-workspace-active {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  align-content: start;
+  gap: 16px;
+  max-width: 1440px;
+}
+
+.dashboard.scan-workspace-active > .welcome,
+.dashboard.scan-workspace-active > .metric-grid,
+.dashboard.scan-workspace-active > .analytics-section,
+.dashboard.scan-workspace-active > .transactions-section,
+.dashboard.scan-workspace-active > .settings-section {
+  display: none;
+}
+
+.dashboard.scan-workspace-active > .overview-grid {
+  display: contents;
+}
+
+.dashboard.scan-workspace-active > .overview-grid > .category-section {
+  display: none;
+}
+
+.dashboard.scan-workspace-active .scan-section {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: 960px;
+  justify-self: center;
+  margin: 0 auto;
+  scroll-margin-top: 88px;
+}
+
+.dashboard.scan-workspace-active > .processing-panel,
+.dashboard.scan-workspace-active > .error-message,
+.dashboard.scan-workspace-active > .success-message {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: 960px;
+  justify-self: center;
+  margin: 0 auto;
+}
+
+.dashboard.scan-workspace-active > .image-preview-panel,
+.dashboard.scan-workspace-active > .review-panel {
+  align-self: start;
+  min-width: 0;
+  margin: 0;
+}
+
+.dashboard.scan-workspace-active > .image-preview-panel {
+  grid-column: 1;
+}
+
+.dashboard.scan-workspace-active > .review-panel {
+  grid-column: 2;
+}
+
+.dashboard.scan-workspace-active .review-panel > .muted {
+  margin-top: -7px;
+}
+
+html[data-theme="dark"] .upload-dropzone,
+html[data-theme="dark"] .review-group,
+html[data-theme="dark"] .local-scan-note {
+  border-color: var(--line);
+  background: #17231c;
+  color: #b3c4b8;
+}
+
+html[data-theme="dark"] .review-group h3 {
+  color: #b3c4b8;
+}
+
+html[data-theme="dark"] .image-preview-panel img {
+  border-color: var(--line);
+  background: #101914;
+}
+
+@media (max-width: 760px) {
+  .dashboard.scan-workspace-active {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding-top: 18px;
+  }
+
+  .dashboard.scan-workspace-active > .overview-grid {
+    display: contents;
+  }
+
+  .dashboard.scan-workspace-active .scan-section,
+  .dashboard.scan-workspace-active > .processing-panel,
+  .dashboard.scan-workspace-active > .image-preview-panel,
+  .dashboard.scan-workspace-active > .review-panel,
+  .dashboard.scan-workspace-active > .error-message,
+  .dashboard.scan-workspace-active > .success-message {
+    grid-column: 1;
+  }
+
+  .dashboard.scan-workspace-active .scan-section {
+    padding: 17px;
+  }
+
+  .dashboard.scan-workspace-active > .image-preview-panel,
+  .dashboard.scan-workspace-active > .review-panel {
+    padding: 16px;
+  }
+
+  .dashboard.scan-workspace-active > .image-preview-panel img {
+    max-height: 34vh;
+  }
+
+  .change-photo-button {
+    min-height: 34px;
+    padding: 0 8px;
+    font-size: 10px;
+  }
+
+  .image-preview-actions {
+    gap: 5px;
+  }
+
+  .scan-page-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 15px;
+  }
+
+  .scan-page-heading h1,
+  .scan-page-heading h2 {
+    font-size: 21px;
+  }
+
+  .upload-dropzone {
+    min-height: 225px;
+    padding: 18px 14px;
+  }
+
+  .upload-dropzone .scan-actions {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .review-fields-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

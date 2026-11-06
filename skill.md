@@ -616,3 +616,11 @@ When debugging:
 6. Review the result before proceeding.
 
 The goal is to deliver a reliable, explainable and honestly evaluated Bill Snap application.
+
+## 16. Mobile scan and review UX (6 November 2026)
+
+The scan interaction is a focused workspace in `src/App.tsx` and `src/App.css`. Opening Scan hides the dashboard summaries and other sections; the user sees a clear camera or gallery choice. After selecting an image, the app shows the receipt preview next to the extracted details on desktop and stacks them on mobile. The preview is compact and opens at full size when tapped. Users can change or remove the photo.
+
+Review fields are grouped into Receipt information (merchant/date), Payment (total/currency), and Spending category. Field status uses short labels such as “Check this”, “Looks good”, and “Edited”; detailed OCR evidence stays collapsed. Saving clears the review and shows a local-save confirmation while keeping the scan workspace ready for another receipt.
+
+Visual and interaction verification used B5 in headless Chrome at 390×844 mobile and 1365×900 desktop viewports: preview displayed, zoom overlay opened, fields appeared in the review workspace, and saving showed “Receipt saved to this device.” A 320px viewport check reported no horizontal overflow. `npm run lint`, `npm run build`, and `git diff --check` pass. These UI changes are local and have not been pushed or deployed.

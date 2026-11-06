@@ -225,16 +225,16 @@ function getFieldStatus(field: {
   userCorrected?: boolean;
 }): string {
   if (field.userCorrected) {
-    return `User-corrected · original extraction confidence: ${field.confidence}`;
+    return "Edited";
   }
 
   if (field.reviewed) {
-    return `Reviewed · extraction confidence: ${field.confidence}`;
+    return "Reviewed";
   }
 
-  return field.needsReview
-    ? `Needs attention · extraction confidence: ${field.confidence}`
-    : `Extraction confidence: ${field.confidence}`;
+  if (field.needsReview || field.confidence === "low") return "Check this";
+  if (field.confidence === "high") return "Looks good";
+  return "Review if needed";
 }
 
 function App() {
@@ -244,6 +244,7 @@ function App() {
 
   const [selectedImage, setSelectedImage] =
     useState<ProcessedImage | null>(null);
+  const [isPreviewExpanded, setIsPreviewExpanded] = useState(false);
 
   const [imageError, setImageError] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -293,6 +294,15 @@ function App() {
     document.documentElement.dataset.theme = settings.preferences.appearance;
   }, [settings.preferences.appearance]);
 
+  useEffect(() => {
+    if (!isPreviewExpanded) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsPreviewExpanded(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [isPreviewExpanded]);
+
   async function loadBills() {
     try {
       const savedBills = await getAllBills();
@@ -336,6 +346,10 @@ function App() {
 
     if (!file) return;
 
+    setActiveTab("Scan Receipt");
+    window.requestAnimationFrame(() =>
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    );
     setImageError("");
     setSaveMessage("");
     setDuplicateWarning(null);
@@ -398,6 +412,7 @@ function App() {
     }
 
     setSelectedImage(null);
+    setIsPreviewExpanded(false);
     setBillData(null);
     setTotalInput("");
     setImageError("");
@@ -488,8 +503,8 @@ function App() {
       await loadBills();
 
       setDuplicateWarning(null);
-      setSaveMessage("Bill saved successfully.");
       removeImage();
+      setSaveMessage("Receipt saved to this device.");
     } catch (error) {
       if (error instanceof ProbableDuplicateBillError) {
         setDuplicateWarning(error.existingBill);
@@ -812,6 +827,10 @@ function App() {
 
   const navigateTo = (label: string, target: string) => {
     setActiveTab(label);
+    if (label === "Scan Receipt") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     document.getElementById(target)?.scrollIntoView({
       behavior: "smooth",
       block: "start",
@@ -891,14 +910,22 @@ function App() {
           </div>
           <button
             className="topbar-scan-button"
-            onClick={() => navigateTo("Scan Receipt", "scan-receipt")}
+            onClick={() =>
+              activeTab === "Scan Receipt"
+                ? navigateTo("Dashboard", "dashboard-home")
+                : navigateTo("Scan Receipt", "scan-receipt")
+            }
           >
-            <Plus size={17} />
-            <span>New receipt</span>
+            {activeTab === "Scan Receipt" ? (
+              <LayoutDashboard size={17} />
+            ) : (
+              <Plus size={17} />
+            )}
+            <span>{activeTab === "Scan Receipt" ? "Dashboard" : "New receipt"}</span>
           </button>
         </header>
 
-        <main className="dashboard">
+        <main className={`dashboard${activeTab === "Scan Receipt" ? " scan-workspace-active" : ""}`}>
           <section className="welcome" id="dashboard-home">
             <div>
               <p className="eyebrow">PERSONAL FINANCE</p>
@@ -1132,45 +1159,51 @@ function App() {
             </section>
 
             <section className="content-card scan-section" id="scan-receipt">
-              <div className="section-heading">
+              <div className="scan-page-heading">
                 <div>
-                  <p className="card-kicker">QUICK ACTION</p>
-                  <h2>Scan a receipt</h2>
-                  <p className="muted">Capture or upload to add a new expense.</p>
+                  <p className="card-kicker">{selectedImage ? "RECEIPT REVIEW" : "ADD A RECEIPT"}</p>
+                  {activeTab === "Scan Receipt" ? (
+                    <h1>{selectedImage ? "Review your receipt" : "Scan a bill"}</h1>
+                  ) : (
+                    <h2>{selectedImage ? "Review your receipt" : "Scan a bill"}</h2>
+                  )}
+                  <p className="muted">
+                    {selectedImage
+                      ? "Check the photo and details before saving."
+                      : "Take a clear photo or choose one from your phone."}
+                  </p>
                 </div>
-              </div>
-              <div className="upload-dropzone">
-                <span className="upload-illustration"><ReceiptText size={24} /></span>
-                <strong>Bring your receipt into focus</strong>
-                <span>JPG, PNG or WebP image</span>
-                <button
-                  className="upload-button"
-                  onClick={openGallery}
-                  disabled={isProcessing || isSaving}
-                >
-                  <Upload size={17} />
-                  <span>Choose an image</span>
-                </button>
+                {selectedImage && (
+                  <span className="local-scan-note"><span className="local-indicator" />Saved only on this device</span>
+                )}
               </div>
 
-              <div className="scan-actions">
-                <button
-                  className="scan-button"
-                  onClick={openCamera}
-                  disabled={isProcessing || isSaving}
-                >
-                  <Camera size={18} />
-                  <span>Use camera</span>
-                </button>
-                <button
-                  className="upload-button secondary-upload"
-                  onClick={openGallery}
-                  disabled={isProcessing || isSaving}
-                >
-                  <Upload size={18} />
-                  <span>Browse files</span>
-                </button>
-              </div>
+              {!selectedImage && (
+                <div className="upload-dropzone">
+                  <span className="upload-illustration"><ReceiptText size={24} /></span>
+                  <strong>Keep the whole bill in frame</strong>
+                  <span>Works with JPG, PNG and WebP photos</span>
+                  <div className="scan-actions">
+                    <button
+                      className="scan-button"
+                      onClick={openCamera}
+                      disabled={isProcessing || isSaving}
+                    >
+                      <Camera size={18} />
+                      <span>Take a photo</span>
+                    </button>
+                    <button
+                      className="upload-button secondary-upload"
+                      onClick={openGallery}
+                      disabled={isProcessing || isSaving}
+                    >
+                      <Upload size={18} />
+                      <span>Choose from gallery</span>
+                    </button>
+                  </div>
+                  <span className="privacy-hint">Your receipt stays on this device.</span>
+                </div>
+              )}
 
               <input
                 ref={fileInput}
@@ -1806,55 +1839,65 @@ function App() {
           <div className="preview-panel image-preview-panel">
             <div className="preview-heading">
               <div>
-                <p className="card-kicker">SELECTED IMAGE</p>
-                <strong>Receipt preview</strong>
+                <p className="card-kicker">YOUR PHOTO</p>
+                <strong>Receipt photo</strong>
               </div>
-              <button
-                onClick={removeImage}
-                aria-label="Remove image"
-                disabled={isSaving}
-                className="icon-button"
-              >
-                <X size={18} />
-              </button>
+              <div className="image-preview-actions">
+                <button
+                  className="upload-button change-photo-button"
+                  onClick={openGallery}
+                  disabled={isSaving || isProcessing}
+                >
+                  <Upload size={16} />
+                  <span>Change photo</span>
+                </button>
+                <button
+                  onClick={removeImage}
+                  aria-label="Remove receipt photo"
+                  disabled={isSaving || isProcessing}
+                  className="icon-button"
+                >
+                  <X size={17} />
+                </button>
+              </div>
             </div>
 
-            <img
-              src={selectedImage.previewUrl}
-              alt="Selected bill preview"
-            />
-
-            <p className="muted">
-              Resolution: {selectedImage.width} × {selectedImage.height} pixels
-            </p>
-            <p className="muted">
-              Original: {(selectedImage.originalSize / 1024).toFixed(1)} KB
-              {" · "}
-              Compressed: {(selectedImage.compressedSize / 1024).toFixed(1)} KB
-            </p>
+            <button
+              type="button"
+              className="receipt-image-button"
+              onClick={() => setIsPreviewExpanded(true)}
+              aria-label="View full-size receipt photo"
+            >
+              <img src={selectedImage.previewUrl} alt="Selected bill preview" />
+              <span>Tap to enlarge</span>
+            </button>
+            <p className="preview-file-name">{selectedImage.originalName}</p>
           </div>
         )}
 
         {billData && (
           <section className="preview-panel review-panel">
             <div className="preview-heading">
-              <strong>Review extracted details</strong>
-              <span className="review-badge">Manual review</span>
+              <div>
+                <p className="card-kicker">CHECK BEFORE SAVING</p>
+                <strong>Bill details</strong>
+              </div>
+              <span className={`review-badge${[billData.merchant, billData.date, billData.total, billData.category].some((field) => field.needsReview) ? " attention" : " ready"}`}>
+                {[billData.merchant, billData.date, billData.total, billData.category].some((field) => field.needsReview)
+                  ? "Needs a check"
+                  : "Ready to review"}
+              </span>
             </div>
 
             <p className="muted">
-              Check the extracted values and correct them before saving.
+              Tap a field to make a correction.
             </p>
 
-            {ocrConfidence !== null && (
-              <p className="muted">
-                OCR recognition score: {Math.round(ocrConfidence)}%
-                {" · "}This is an OCR score, not field accuracy.
-              </p>
-            )}
             {ocrEvidence && (
               <details className="ocr-diagnostics">
-                <summary>OCR diagnostics (advanced)</summary>
+                <summary>
+                  Processing details{ocrConfidence !== null && ` · ${Math.round(ocrConfidence)}% OCR`}
+                </summary>
                 <section className="ocr-diagnostic-section">
                   <h3>Primary OCR text (used for extraction)</h3>
                   <dl className="ocr-pass-metadata">
@@ -1944,6 +1987,9 @@ function App() {
               </details>
             )}
 
+            <section className="review-group" aria-labelledby="receipt-info-title">
+              <h3 id="receipt-info-title">Receipt information</h3>
+              <div className="review-fields-grid">
             <div className="review-field">
               <label className="field-label" htmlFor="merchant">
                 Merchant
@@ -1984,7 +2030,12 @@ function App() {
                 Use DD-MM-YYYY or YYYY-MM-DD.
               </span>
             </div>
+              </div>
+            </section>
 
+            <section className="review-group payment-group" aria-labelledby="payment-info-title">
+              <h3 id="payment-info-title">Payment</h3>
+              <div className="review-fields-grid">
             <div className="review-field">
               <label className="field-label" htmlFor="bill-total">
                 Total amount
@@ -2034,9 +2085,7 @@ function App() {
                 Currency
               </label>
               <span className={`field-confidence confidence-${billData.currency.confidence}`}>
-                {billData.currency.code
-                  ? `Detected ${billData.currency.code}. Change it if this is wrong.`
-                  : "Could not detect a currency. Choose one if it is shown on the receipt."}
+                {billData.currency.code ? "Detected" : "Choose if known"}
               </span>
               <select
                 id="bill-currency"
@@ -2055,7 +2104,11 @@ function App() {
                 <option value="EUR">EUR — Euro</option>
               </select>
             </div>
+              </div>
+            </section>
 
+            <section className="review-group category-group" aria-labelledby="category-info-title">
+              <h3 id="category-info-title">Spending category</h3>
             <div className="review-field">
               <label className="field-label" htmlFor="bill-category">
                 Category
@@ -2081,6 +2134,7 @@ function App() {
                 ))}
               </select>
             </div>
+            </section>
 
             <button
               className="scan-button save-button"
@@ -2119,6 +2173,30 @@ function App() {
               </div>
             )}
           </section>
+        )}
+
+        {selectedImage && isPreviewExpanded && (
+          <div
+            className="receipt-photo-backdrop"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Full-size receipt photo"
+            onClick={() => setIsPreviewExpanded(false)}
+          >
+            <section className="receipt-photo-dialog" onClick={(event) => event.stopPropagation()}>
+              <div className="receipt-photo-dialog-heading">
+                <strong>Receipt photo</strong>
+                <button
+                  className="icon-button"
+                  aria-label="Close full-size receipt photo"
+                  onClick={() => setIsPreviewExpanded(false)}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <img src={selectedImage.previewUrl} alt="Full-size receipt" />
+            </section>
+          </div>
         )}
 
         <section className="content-card transactions-section" id="transactions">
