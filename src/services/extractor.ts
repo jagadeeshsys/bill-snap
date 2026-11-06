@@ -1,5 +1,9 @@
 
-import type { OCRResult } from "./ocrEvidence";
+import type {
+  OCRLineEvidence,
+  OCRPassSource,
+  OCRResult,
+} from "./ocrEvidence";
 
 export type ExpenseCategory =
   | "Food"
@@ -19,6 +23,26 @@ export interface ExtractedField<T> {
   userCorrected?: boolean;
 }
 
+export type EvidenceFieldName = "merchant" | "date" | "total";
+
+export interface ExtractionEvidence<T> {
+  field: EvidenceFieldName;
+  selectedValue: T | null;
+  originalText: string | null;
+  sourceBlockIds: string[] | null;
+  sourceWordIds: string[] | null;
+  matchingLabel: string | null;
+  reason: string;
+  confidence: "high" | "medium" | "low";
+  sourceOCRPass: OCRPassSource | null;
+}
+
+export interface ExtractedBillEvidence {
+  merchant: ExtractionEvidence<string>;
+  date: ExtractionEvidence<string>;
+  total: ExtractionEvidence<number>;
+}
+
 export interface ExtractedBill {
   isBill: boolean;
   merchant: ExtractedField<string>;
@@ -26,6 +50,7 @@ export interface ExtractedBill {
   total: ExtractedField<number>;
   category: ExtractedField<ExpenseCategory>;
   rawText: string;
+  evidence: ExtractedBillEvidence;
 }
 
 const BILL_KEYWORDS = [
@@ -107,11 +132,232 @@ function getLines(text: string): string[] {
     .filter(Boolean);
 }
 
+function getSourceLines(text: string): string[] {
+  return text.split(/\r?\n/).filter((line) => line.trim().length > 0);
+}
+
+interface CandidateSource {
+  sourceLine: string;
+  valueText: string;
+  valueOccurrence: number;
+  matchingLabel: string | null;
+  labelOccurrence: number;
+  reason: string;
+  labelSourceLine?: string;
+}
+
+function getEvidenceTokens(text: string): string[] {
+  return (
+    text.toUpperCase().match(/[\p{L}\p{N}]+(?:[./-][\p{L}\p{N}]+)*/gu) ??
+    []
+  );
+}
+
+interface TokenSpan {
+  text: string;
+  start: number;
+  end: number;
+}
+
+function getTokenSpans(text: string): TokenSpan[] {
+  return Array.from(
+    text.toUpperCase().matchAll(
+      /[\p{L}\p{N}]+(?:[./-][\p{L}\p{N}]+)*/gu
+    ),
+    (match) => ({
+      text: match[0],
+      start: match.index,
+      end: match.index + match[0].length,
+    })
+  );
+}
+
+function findTokenSpan(
+  line: string,
+  value: string,
+  occurrence: number
+): { start: number; end: number } | null {
+  const lineTokens = getTokenSpans(line);
+  const targetTokens = getEvidenceTokens(value);
+  if (targetTokens.length === 0 || occurrence < 0) return null;
+
+  let seen = 0;
+  for (let index = 0; index <= lineTokens.length - targetTokens.length; index++) {
+    const matches = targetTokens.every(
+      (token, offset) => lineTokens[index + offset].text === token
+    );
+    if (!matches) continue;
+
+    if (seen === occurrence) {
+      const span = {
+        start: lineTokens[index].start,
+        end: lineTokens[index + targetTokens.length - 1].end,
+      };
+      const currencyPrefix = /^\s*(?:₹|£|€|\$)\s*/u.exec(value);
+      if (currencyPrefix) {
+        const rawPrefix = line.slice(0, span.start);
+        const symbol = currencyPrefix[0].trim();
+        const symbolIndex = rawPrefix.lastIndexOf(symbol);
+        if (
+          symbolIndex >= 0 &&
+          /^\s*$/u.test(rawPrefix.slice(symbolIndex + symbol.length))
+        ) {
+          span.start = symbolIndex;
+        }
+      }
+
+      return span;
+    }
+    seen += 1;
+  }
+
+  return null;
+}
+
+function countTokenSpansBefore(
+  line: string,
+  value: string,
+  characterIndex: number
+): number {
+  const lineTokens = getTokenSpans(line);
+  const targetTokens = getEvidenceTokens(value);
+  let count = 0;
+
+  for (let index = 0; index <= lineTokens.length - targetTokens.length; index++) {
+    if (
+      lineTokens[index].start < characterIndex &&
+      targetTokens.every(
+        (token, offset) => lineTokens[index + offset].text === token
+      )
+    ) {
+      count += 1;
+    }
+  }
+
+  return count;
+}
+
+function resolveLineSource(
+  lines: OCRLineEvidence[] | undefined,
+  sourceLine: string,
+  spans: Array<{ text: string; occurrence: number }>
+): { blockIds: string[]; wordIds: string[]; originalText: string } | null {
+  if (!lines?.length || spans.length === 0) return null;
+
+  const sourceTokens = getEvidenceTokens(sourceLine);
+  if (sourceTokens.length === 0) return null;
+
+  const exactMatches = lines.filter((line) => {
+    const lineTokens = getEvidenceTokens(line.text);
+    const wordTokens = line.words.flatMap((word) =>
+      getEvidenceTokens(word.text)
+    );
+    return (
+      lineTokens.length === sourceTokens.length &&
+      lineTokens.every((token, index) => token === sourceTokens[index]) &&
+      wordTokens.length === sourceTokens.length &&
+      wordTokens.every((token, index) => token === sourceTokens[index])
+    );
+  });
+  if (exactMatches.length !== 1) return null;
+
+  const line = exactMatches[0];
+  const tokenSpans = getTokenSpans(sourceLine);
+  const ranges = spans.map((span) =>
+    findTokenSpan(sourceLine, span.text, span.occurrence)
+  );
+  if (ranges.some((range) => range === null)) return null;
+
+  let tokenIndex = 0;
+  const wordRanges = line.words.map((word) => {
+    const start = tokenIndex;
+    tokenIndex += getEvidenceTokens(word.text).length;
+    return { word, start, end: tokenIndex };
+  });
+  const selectedWords = wordRanges.filter(({ start, end }) =>
+    ranges.some((range) => {
+      if (!range) return false;
+      const startToken = tokenSpans.findIndex(
+        (token) => token.end > range.start
+      );
+      const endTokenExclusive = tokenSpans.findIndex(
+        (token) => token.start >= range.end
+      );
+      const endToken =
+        endTokenExclusive === -1 ? tokenSpans.length : endTokenExclusive;
+      return startToken >= 0 && start < endToken && end > startToken;
+    })
+  );
+  if (selectedWords.length === 0) return null;
+
+  const originalText = ranges
+    .map((range) => (range ? sourceLine.slice(range.start, range.end) : ""))
+    .join(" ");
+
+  return {
+    blockIds: [...new Set(selectedWords.map(({ word }) => word.blockId))],
+    wordIds: selectedWords.map(({ word }) => word.id),
+    originalText,
+  };
+}
+
+function makeExtractionEvidence<T>(
+  field: EvidenceFieldName,
+  selectedValue: T | null,
+  confidence: "high" | "medium" | "low",
+  candidate: CandidateSource | null,
+  source: OCRResult | null,
+  reasonWhenMissing: string
+): ExtractionEvidence<T> {
+  if (!candidate || selectedValue === null) {
+    return {
+      field,
+      selectedValue,
+      originalText: null,
+      sourceBlockIds: null,
+      sourceWordIds: null,
+      matchingLabel: null,
+      reason: reasonWhenMissing,
+      confidence,
+      sourceOCRPass: source?.primaryFullPage.source ?? null,
+    };
+  }
+
+  const valueSource = resolveLineSource(
+    source?.primaryFullPage.lines,
+    candidate.sourceLine,
+    [{ text: candidate.valueText, occurrence: candidate.valueOccurrence }]
+  );
+  const rawValueSpan = findTokenSpan(
+    candidate.sourceLine,
+    candidate.valueText,
+    candidate.valueOccurrence
+  );
+
+  return {
+    field,
+    selectedValue,
+    originalText: rawValueSpan
+      ? candidate.sourceLine.slice(rawValueSpan.start, rawValueSpan.end)
+      : null,
+    sourceBlockIds: valueSource?.blockIds ?? null,
+    sourceWordIds: valueSource?.wordIds ?? null,
+    matchingLabel: candidate.matchingLabel,
+    reason: candidate.reason,
+    confidence,
+    sourceOCRPass: source?.primaryFullPage.source ?? null,
+  };
+}
+
 // --------------------------------------------------
 // MERCHANT EXTRACTION
 // --------------------------------------------------
 
-function extractMerchant(text: string): ExtractedField<string> {
+function extractMerchant(text: string): {
+  field: ExtractedField<string>;
+  candidate: CandidateSource | null;
+  missingReason: string;
+} {
   const excludedLine =
     /\b(?:(?:tax\s+)?invoice|invoice\s*(?:no|number|date|amount)|bill\s*(?:no|number|date|amount)|receipt\s*(?:no|number|date|amount)|cash\s*memo|(?:original|duplicate|triplicate)\s+for\s+(?:recipient|transporter|supplier)|gstin|gst\s*(?:no|number|in)|pan\s*(?:no|number)|phone|mobile|contact|telephone|email|website|customer|buyer|supplier\s*details|place\s*of\s*supply|state\s*code|address|road|street|lane|nagar|pincode|pin\s*code|district|taluk|city|payment|amount|total|tax|subtotal|description|hsn|sac|quantity|qty|rate|authorized|authorised|signatory|round\s*off|service\s*due|expiry|warranty|delivery)\b/i;
   const genericHeader =
@@ -127,12 +373,21 @@ function extractMerchant(text: string): ExtractedField<string> {
     /^(?:store|sales|shop|business|company|merchant|customer|supplier|details|particulars|description|date|total|cash|tax|payment|address|phone|contact|welcome|thank\s+you)$/i;
   const merchantFieldLabel =
     /^(?:merchant|business\s*name|store\s*name|shop\s*name|company\s*name|name)\s*[:.-]\s*/i;
+  const sourceLines = getSourceLines(text);
 
   const candidates = getLines(text)
     .map((originalLine, index) => {
       const hasMerchantLabel = merchantFieldLabel.test(originalLine);
       const forBusiness = /^for\s+(.+)$/i.exec(originalLine);
       const hasForBusiness = forBusiness !== null;
+      const sourceLine = sourceLines[index] ?? originalLine;
+      const sourceTextLine = sourceLine.trim();
+      const sourceForBusiness = /^for\s+(.+)$/i.exec(sourceTextLine);
+      const originalCandidateText = (
+        sourceForBusiness?.[1] ?? sourceTextLine
+      )
+        .replace(merchantFieldLabel, "")
+        .trim();
       const line = (forBusiness?.[1] ?? originalLine)
         .replace(/^for\s+/i, "")
         .replace(merchantFieldLabel, "")
@@ -183,9 +438,36 @@ function extractMerchant(text: string): ExtractedField<string> {
 
       return {
         line,
+        originalLine,
+        sourceLine,
+        originalCandidateText,
         normalizedLine: line.toUpperCase().replace(/[^A-Z0-9]/g, ""),
         score,
         index,
+        matchingLabel: hasMerchantLabel
+          ? merchantFieldLabel
+              .exec(sourceTextLine)?.[0]
+              .replace(/[:.-]\s*$/, "")
+              .trim() ?? null
+          : hasForBusiness
+            ? "For"
+            : null,
+        labelOccurrence: hasMerchantLabel
+          ? countTokenSpansBefore(
+              sourceTextLine,
+              merchantFieldLabel.exec(sourceTextLine)?.[0] ?? "",
+              0
+            )
+          : 0,
+        reason: hasMerchantLabel
+          ? "business-name label"
+          : hasForBusiness
+            ? "for-business header"
+            : index < 8
+              ? "header position"
+              : businessSuffix.test(line)
+                ? "business-name pattern"
+                : "merchant candidate",
       };
     })
     .filter(
@@ -193,9 +475,15 @@ function extractMerchant(text: string): ExtractedField<string> {
         candidate
       ): candidate is {
         line: string;
+        originalLine: string;
+        sourceLine: string;
+        originalCandidateText: string;
         normalizedLine: string;
         score: number;
         index: number;
+        matchingLabel: string | null;
+        labelOccurrence: number;
+        reason: string;
       } => candidate !== null
     )
     .sort((a, b) => b.score - a.score || a.index - b.index);
@@ -211,24 +499,42 @@ function extractMerchant(text: string): ExtractedField<string> {
             group.line = candidate.line;
             group.score = candidate.score;
             group.index = candidate.index;
+            group.originalLine = candidate.originalLine;
+            group.sourceLine = candidate.sourceLine;
+            group.originalCandidateText = candidate.originalCandidateText;
+            group.matchingLabel = candidate.matchingLabel;
+            group.labelOccurrence = candidate.labelOccurrence;
+            group.reason = candidate.reason;
           }
         } else {
           groups.set(candidate.normalizedLine, {
             line: candidate.line,
+            originalLine: candidate.originalLine,
+            sourceLine: candidate.sourceLine,
+            originalCandidateText: candidate.originalCandidateText,
             normalizedLine: candidate.normalizedLine,
             score: candidate.score,
             index: candidate.index,
             count: 1,
+            matchingLabel: candidate.matchingLabel,
+            labelOccurrence: candidate.labelOccurrence,
+            reason: candidate.reason,
           });
         }
 
         return groups;
       }, new Map<string, {
         line: string;
+        originalLine: string;
+        sourceLine: string;
+        originalCandidateText: string;
         normalizedLine: string;
         score: number;
         index: number;
         count: number;
+        matchingLabel: string | null;
+        labelOccurrence: number;
+        reason: string;
       }>())
       .values(),
   ]
@@ -240,15 +546,34 @@ function extractMerchant(text: string): ExtractedField<string> {
   const selected = distinctCandidates[0];
 
   if (!selected) {
-    return makeField<string>(null, "low");
+    return {
+      field: makeField<string>(null, "low"),
+      candidate: null,
+      missingReason: "no merchant candidate selected",
+    };
   }
 
   if (selected.score < 65) {
     if (affiliationDescription.test(selected.line)) {
-      return makeField(selected.line.toUpperCase(), "low");
+      return {
+        field: makeField(selected.line.toUpperCase(), "low"),
+        candidate: {
+          sourceLine: selected.sourceLine,
+          valueText: selected.originalCandidateText,
+          valueOccurrence: 0,
+          matchingLabel: null,
+          labelOccurrence: 0,
+          reason: "low-confidence affiliation header",
+        },
+        missingReason: "",
+      };
     }
 
-    return makeField<string>(null, "low");
+    return {
+      field: makeField<string>(null, "low"),
+      candidate: null,
+      missingReason: "merchant candidate confidence below selection threshold",
+    };
   }
 
   const secondCandidate = distinctCandidates[1];
@@ -268,18 +593,32 @@ function extractMerchant(text: string): ExtractedField<string> {
       ? "medium"
       : rankedConfidence;
 
-  return makeField(
-    selected.line.toUpperCase(),
-    confidence
-  );
+  return {
+    field: makeField(selected.line.toUpperCase(), confidence),
+    candidate: {
+      sourceLine: selected.sourceLine,
+      valueText: selected.originalCandidateText,
+      valueOccurrence: 0,
+      matchingLabel: selected.matchingLabel,
+      labelOccurrence: selected.labelOccurrence,
+      reason: selected.reason,
+    },
+    missingReason: "",
+  };
 }
 
 // --------------------------------------------------
 // DATE EXTRACTION
 // --------------------------------------------------
 
-function findDates(line: string): string[] {
-  const dates: string[] = [];
+interface DateCandidate {
+  value: string;
+  originalText: string;
+  index: number;
+}
+
+function findDateCandidates(line: string): DateCandidate[] {
+  const dates: DateCandidate[] = [];
   const monthNumbers: Record<string, number> = {
     JAN: 1,
     FEB: 2,
@@ -294,7 +633,13 @@ function findDates(line: string): string[] {
     NOV: 11,
     DEC: 12,
   };
-  const addDate = (day: number, month: number, year: number) => {
+  const addDate = (
+    day: number,
+    month: number,
+    year: number,
+    originalText: string,
+    index: number
+  ) => {
     if (year < 1000 || year > 9999) return;
 
     const date = new Date(Date.UTC(year, month - 1, day));
@@ -310,18 +655,26 @@ function findDates(line: string): string[] {
       return;
     }
 
-    dates.push(
-      `${String(day).padStart(2, "0")}-${String(month).padStart(
+    dates.push({
+      value: `${String(day).padStart(2, "0")}-${String(month).padStart(
         2,
         "0"
-      )}-${year}`
-    );
+      )}-${year}`,
+      originalText,
+      index,
+    });
   };
 
   for (const match of line.matchAll(
     /\b(\d{1,2})[./-](\d{1,2})[./-](\d{4})\b/g
   )) {
-    addDate(Number(match[1]), Number(match[2]), Number(match[3]));
+    addDate(
+      Number(match[1]),
+      Number(match[2]),
+      Number(match[3]),
+      match[0],
+      match.index
+    );
   }
 
   for (const match of line.matchAll(
@@ -329,15 +682,30 @@ function findDates(line: string): string[] {
   )) {
     const month = monthNumbers[match[2].toUpperCase()];
     if (month) {
-      addDate(Number(match[1]), month, Number(match[3]));
+      addDate(
+        Number(match[1]),
+        month,
+        Number(match[3]),
+        match[0],
+        match.index
+      );
     }
   }
 
   return dates;
 }
 
-function extractDate(text: string): ExtractedField<string> {
+function findDates(line: string): string[] {
+  return findDateCandidates(line).map((candidate) => candidate.value);
+}
+
+function extractDate(text: string): {
+  field: ExtractedField<string>;
+  candidate: CandidateSource | null;
+  missingReason: string;
+} {
   const lines = getLines(text);
+  const sourceLines = getSourceLines(text);
   const invoiceDateLabel =
     /\b(?:invoice\s*date|bill\s*date|receipt\s*date|date\s*of\s*(?:purchase|issue|invoice)|invoice\s*dale|invoicedate|billdate)\b/i;
   const excludedDateLabel =
@@ -345,7 +713,7 @@ function extractDate(text: string): ExtractedField<string> {
   const invoiceNumberLabel =
     /\b(?:invoice|bill|receipt)\s*(?:no|number|#)\b/i;
 
-  const labeledDates = new Set<string>();
+  const labeledDates = new Map<string, CandidateSource>();
 
   lines.forEach((line, index) => {
     const labelMatch = invoiceDateLabel.exec(line);
@@ -366,10 +734,12 @@ function extractDate(text: string): ExtractedField<string> {
       }
 
       let dateText = candidateLine;
+      let dateTextOffset = 0;
 
       if (offset === 0) {
+        dateTextOffset = labelMatch.index + labelMatch[0].length;
         dateText = candidateLine.slice(
-          labelMatch.index + labelMatch[0].length
+          dateTextOffset
         );
         const nextLabel = [
           excludedDateLabel.exec(dateText),
@@ -384,15 +754,41 @@ function extractDate(text: string): ExtractedField<string> {
 
         if (!findDates(dateText).length) {
           dateText = candidateLine.slice(0, labelMatch.index);
+          dateTextOffset = 0;
         }
       }
 
-      findDates(dateText).forEach((date) => labeledDates.add(date));
+      findDateCandidates(dateText).forEach((date) => {
+        if (!labeledDates.has(date.value)) {
+          const sourceLine = sourceLines[index + offset] ?? candidateLine;
+          const originalLabel =
+            invoiceDateLabel.exec(sourceLines[index] ?? line)?.[0] ??
+            labelMatch[0];
+          const labelOccurrence = countTokenSpansBefore(
+            line,
+            labelMatch[0],
+            labelMatch.index
+          );
+          labeledDates.set(date.value, {
+            sourceLine,
+            valueText: date.originalText,
+            valueOccurrence: countTokenSpansBefore(
+              candidateLine,
+              date.originalText,
+              dateTextOffset + date.index
+            ),
+            matchingLabel: originalLabel,
+            labelOccurrence,
+            reason: "explicit invoice-date label",
+            labelSourceLine: sourceLines[index] ?? line,
+          });
+        }
+      });
     }
   });
 
   if (labeledDates.size === 1) {
-    const labeledDate = [...labeledDates][0];
+    const [labeledDate, candidate] = [...labeledDates.entries()][0];
     const competingDates = new Set<string>();
 
     lines.forEach((line) => {
@@ -408,19 +804,25 @@ function extractDate(text: string): ExtractedField<string> {
       });
     });
 
-    return makeField(
-      labeledDate,
-      competingDates.size > 0 ? "medium" : "high"
-    );
+    const confidence = competingDates.size > 0 ? "medium" : "high";
+    return {
+      field: makeField(labeledDate, confidence),
+      candidate,
+      missingReason: "",
+    };
   }
 
   if (labeledDates.size > 1) {
-    return makeField<string>(null, "low");
+    return {
+      field: makeField<string>(null, "low"),
+      candidate: null,
+      missingReason: "conflicting labeled invoice dates",
+    };
   }
 
-  const unlabelledDates = new Set<string>();
+  const unlabelledDates = new Map<string, CandidateSource>();
 
-  lines.forEach((line) => {
+  lines.forEach((line, index) => {
     if (
       excludedDateLabel.test(line) ||
       invoiceNumberLabel.test(line)
@@ -428,24 +830,58 @@ function extractDate(text: string): ExtractedField<string> {
       return;
     }
 
-    findDates(line).forEach((date) => unlabelledDates.add(date));
+    findDateCandidates(line).forEach((date) => {
+      if (!unlabelledDates.has(date.value)) {
+        const sourceLine = sourceLines[index] ?? line;
+        unlabelledDates.set(date.value, {
+          sourceLine,
+          valueText: date.originalText,
+          valueOccurrence: countTokenSpansBefore(
+            line,
+            date.originalText,
+            date.index
+          ),
+          matchingLabel: null,
+          labelOccurrence: 0,
+          reason: "single unlabelled date candidate",
+        });
+      }
+    });
   });
 
   if (unlabelledDates.size === 1) {
-    return makeField([...unlabelledDates][0], "medium");
+    const [date, candidate] = [...unlabelledDates.entries()][0];
+    return {
+      field: makeField(date, "medium"),
+      candidate,
+      missingReason: "",
+    };
   }
 
-  return makeField<string>(null, "low");
+  return {
+    field: makeField<string>(null, "low"),
+    candidate: null,
+    missingReason:
+      unlabelledDates.size > 1
+        ? "conflicting unlabelled date candidates"
+        : "no valid invoice date candidate",
+  };
 }
 
 // --------------------------------------------------
 // TOTAL EXTRACTION
 // --------------------------------------------------
 
-function extractMoneyValues(line: string): number[] {
+interface MoneyCandidate {
+  value: number;
+  originalText: string;
+  startIndex: number;
+}
+
+function extractMoneyCandidates(line: string): MoneyCandidate[] {
   const amountPattern =
     /(?:^|[^\d.,\p{L}])(-\s*)?(?:₹|INR\b|Rs\.?)?\s*(-?\d[\d,]*(?:\.\d{1,2})?)(?![\d.,\p{L}])/giu;
-  const amounts: number[] = [];
+  const amounts: MoneyCandidate[] = [];
 
   for (const match of line.matchAll(amountPattern)) {
     const rawValue = match[2];
@@ -464,7 +900,17 @@ function extractMoneyValues(line: string): number[] {
     const value = Number(rawValue.replace(/,/g, ""));
 
     if (Number.isFinite(value) && value > 0 && value < 100000000) {
-      amounts.push(value);
+      const precedingCurrency =
+        /(?:₹|£|€|\$|(?:INR|GBP|EUR|USD|Rs\.?)\s*)$/i.exec(
+          line.slice(0, match.index)
+        )?.[0] ?? "";
+      amounts.push({
+        value,
+        originalText: precedingCurrency
+          ? `${precedingCurrency}${match[0]}`.trim()
+          : match[0].trim(),
+        startIndex: Math.max(0, match.index - precedingCurrency.length),
+      });
     }
   }
 
@@ -484,8 +930,13 @@ function isStandaloneNearbyAmount(line: string): boolean {
   );
 }
 
-function extractTotal(text: string): ExtractedField<number> {
+function extractTotal(text: string): {
+  field: ExtractedField<number>;
+  candidate: CandidateSource | null;
+  missingReason: string;
+} {
   const lines = getLines(text);
+  const sourceLines = getSourceLines(text);
   const totalLabels = [
     {
       pattern: /\binvoice\s*amount\s*payable\b/i,
@@ -552,6 +1003,7 @@ function extractTotal(text: string): ExtractedField<number> {
   const candidates: {
     value: number;
     score: number;
+    candidate: CandidateSource;
   }[] = [];
 
   const nonTotalLabels =
@@ -577,17 +1029,47 @@ function extractTotal(text: string): ExtractedField<number> {
       continue;
     }
 
-    const sameLineValues = extractMoneyValues(
+    const sameLineValues = extractMoneyCandidates(
       line.slice(labelMatch.index + labelMatch[0].length)
     );
-    const valuesOnLabelLine = sameLineValues.length
-      ? [sameLineValues[0]]
-      : extractMoneyValues(line);
+    const sameLineHasValues = sameLineValues.length > 0;
+    const valuesOnLabelLine = sameLineHasValues
+      ? sameLineValues
+      : extractMoneyCandidates(line);
 
     if (valuesOnLabelLine.length) {
+      const selectedAmount = valuesOnLabelLine[0];
+      const selectedAmountStart =
+        selectedAmount.startIndex +
+        (sameLineHasValues
+          ? labelMatch.index + labelMatch[0].length
+          : 0);
+      const labelOccurrence = countTokenSpansBefore(
+        line,
+        labelMatch[0],
+        labelMatch.index
+      );
       candidates.push({
-        value: valuesOnLabelLine[0],
+        value: selectedAmount.value,
         score: label.score,
+        candidate: {
+          sourceLine: sourceLines[index] ?? line,
+          valueText: selectedAmount.originalText,
+          valueOccurrence: countTokenSpansBefore(
+            line,
+            selectedAmount.originalText,
+            selectedAmountStart
+          ),
+          matchingLabel:
+            label.pattern.exec(sourceLines[index] ?? line)?.[0] ??
+            line.slice(
+              labelMatch.index,
+              labelMatch.index + labelMatch[0].length
+            ),
+          labelOccurrence,
+          reason: "matched payable label and amount on the same line",
+          labelSourceLine: sourceLines[index] ?? line,
+        },
       });
       continue;
     }
@@ -611,12 +1093,35 @@ function extractTotal(text: string): ExtractedField<number> {
 
       if (!isStandaloneNearbyAmount(nearbyLine)) continue;
 
-      const values = extractMoneyValues(nearbyLine);
+      const values = extractMoneyCandidates(nearbyLine);
 
       if (values.length) {
+        const selectedAmount = values[0];
         candidates.push({
-          value: values[0],
+          value: selectedAmount.value,
           score: label.score - offset * 25,
+          candidate: {
+            sourceLine: sourceLines[index + offset] ?? nearbyLine,
+            valueText: selectedAmount.originalText,
+            valueOccurrence: countTokenSpansBefore(
+              nearbyLine,
+              selectedAmount.originalText,
+              selectedAmount.startIndex
+            ),
+            matchingLabel:
+              label.pattern.exec(sourceLines[index] ?? line)?.[0] ??
+              line.slice(
+                labelMatch.index,
+                labelMatch.index + labelMatch[0].length
+              ),
+            labelOccurrence: countTokenSpansBefore(
+              line,
+              labelMatch[0],
+              labelMatch.index
+            ),
+            reason: `matched payable label with standalone amount ${offset} line${offset === 1 ? "" : "s"} later`,
+            labelSourceLine: sourceLines[index] ?? line,
+          },
         });
         break;
       }
@@ -629,7 +1134,11 @@ function extractTotal(text: string): ExtractedField<number> {
   const selected = candidates[0];
 
   if (!selected) {
-    return makeField<number>(null, "low");
+    return {
+      field: makeField<number>(null, "low"),
+      candidate: null,
+      missingReason: "no payable amount candidate selected",
+    };
   }
 
   const distinctCandidates = new Map<number, number>();
@@ -651,7 +1160,11 @@ function extractTotal(text: string): ExtractedField<number> {
     ...competingScores
   );
   if (strongestCompetitor === selected.score) {
-    return makeField<number>(null, "low");
+    return {
+      field: makeField<number>(null, "low"),
+      candidate: null,
+      missingReason: "conflicting equally ranked payable amount candidates",
+    };
   }
 
   const confidence =
@@ -663,10 +1176,11 @@ function extractTotal(text: string): ExtractedField<number> {
           ? "high"
           : "medium";
 
-  return makeField(
-    selected.value,
-    confidence
-  );
+  return {
+    field: makeField(selected.value, confidence),
+    candidate: selected.candidate,
+    missingReason: "",
+  };
 }
 
 // --------------------------------------------------
@@ -732,6 +1246,7 @@ function extractCategory(
 
 export function extractBillData(input: string | OCRResult): ExtractedBill {
   const text = typeof input === "string" ? input : input.primaryFullPage.text;
+  const ocrSource = typeof input === "string" ? null : input;
   const lower = text.toLowerCase();
 
   const keywordCount = BILL_KEYWORDS.filter((keyword) =>
@@ -741,9 +1256,38 @@ export function extractBillData(input: string | OCRResult): ExtractedBill {
   const hasAmount = /\d+[.,]\d{2}/.test(text);
   const isBill = keywordCount >= 1 && hasAmount;
 
-  const merchant = extractMerchant(text);
-  const date = extractDate(text);
-  const total = extractTotal(text);
+  const merchantExtraction = extractMerchant(text);
+  const dateExtraction = extractDate(text);
+  const totalExtraction = extractTotal(text);
+  const merchant = merchantExtraction.field;
+  const date = dateExtraction.field;
+  const total = totalExtraction.field;
+  const evidence: ExtractedBillEvidence = {
+    merchant: makeExtractionEvidence(
+      "merchant",
+      merchant.value,
+      merchant.confidence,
+      merchantExtraction.candidate,
+      ocrSource,
+      merchantExtraction.missingReason
+    ),
+    date: makeExtractionEvidence(
+      "date",
+      date.value,
+      date.confidence,
+      dateExtraction.candidate,
+      ocrSource,
+      dateExtraction.missingReason
+    ),
+    total: makeExtractionEvidence(
+      "total",
+      total.value,
+      total.confidence,
+      totalExtraction.candidate,
+      ocrSource,
+      totalExtraction.missingReason
+    ),
+  };
 
   if (!isBill) {
     return {
@@ -753,6 +1297,7 @@ export function extractBillData(input: string | OCRResult): ExtractedBill {
       total,
       category: makeField<ExpenseCategory>(null, "low"),
       rawText: text,
+      evidence,
     };
   }
 
@@ -765,5 +1310,6 @@ export function extractBillData(input: string | OCRResult): ExtractedBill {
     total,
     category,
     rawText: text,
+    evidence,
   };
 }

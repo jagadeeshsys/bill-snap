@@ -5,6 +5,68 @@ import {
   markFieldUserCorrected,
 } from "../src/services/extractor.ts";
 import { classifyBillText } from "../src/services/billClassifier.ts";
+import {
+  combineOCRPasses,
+  convertOCRBlocks,
+  groupOCRWordsIntoLines,
+  type OCRPassResult,
+} from "../src/services/ocrEvidence.ts";
+
+function makeOCRInput(text: string, blocks: unknown[] = []) {
+  const convertedBlocks = convertOCRBlocks(blocks);
+  const primary: OCRPassResult = {
+    source: "processed-full",
+    text,
+    confidence: 88,
+    pageSegmentationMode: "3",
+    region: null,
+    width: 800,
+    height: 1200,
+    blocks: convertedBlocks,
+    lines: groupOCRWordsIntoLines(
+      convertedBlocks.flatMap((block) => block.words)
+    ),
+  };
+
+  return combineOCRPasses([primary]);
+}
+
+function makeNativeLine(
+  words: Array<{ text: string; x0: number; x1: number }>,
+  y0: number
+) {
+  return {
+    words: words.map((word) => ({
+      text: word.text,
+      confidence: 90,
+      bbox: {
+        x0: word.x0,
+        y0,
+        x1: word.x1,
+        y1: y0 + 20,
+      },
+    })),
+  };
+}
+
+function makeOCRBlock(words: string[], y0: number) {
+  const positionedWords = words.map((text, index) => ({
+    text,
+    x0: index * 100,
+    x1: index * 100 + 80,
+  }));
+  return {
+    text: words.join(" "),
+    confidence: 90,
+    bbox: {
+      x0: 0,
+      y0,
+      x1: Math.max(1, words.length * 100),
+      y1: y0 + 20,
+    },
+    paragraphs: [{ lines: [makeNativeLine(positionedWords, y0)] }],
+  };
+}
 
 test("uses the invoice amount payable instead of net amount and round off", () => {
   const bill = extractBillData(
@@ -798,4 +860,345 @@ test("user correction preserves extraction confidence and records review state",
   assert.equal(corrected.needsReview, false);
   assert.equal(corrected.reviewed, true);
   assert.equal(corrected.userCorrected, true);
+});
+
+test("records OCR source IDs, original text, labels, and reasons for selected fields", () => {
+  const text = [
+    "Bluebird Retail",
+    "Invoice Date: 05/11/2026",
+    "Invoice Amount Payable ₹350.00",
+  ].join("\n");
+  const evidence = makeOCRInput(text, [
+    makeOCRBlock(["Bluebird", "Retail"], 10),
+    makeOCRBlock(["Invoice", "Date:", "05/11/2026"], 50),
+    makeOCRBlock(["Invoice", "Amount", "Payable", "₹350.00"], 90),
+  ]);
+  const bill = extractBillData(evidence);
+
+  assert.equal(bill.merchant.value, "BLUEBIRD RETAIL");
+  assert.equal(bill.date.value, "05-11-2026");
+  assert.equal(bill.total.value, 350);
+  assert.deepEqual(bill.evidence.merchant, {
+    field: "merchant",
+    selectedValue: "BLUEBIRD RETAIL",
+    originalText: "Bluebird Retail",
+    sourceBlockIds: ["block-0"],
+    sourceWordIds: ["block-0-p0-l0-w0", "block-0-p0-l0-w1"],
+    matchingLabel: null,
+    reason: "header position",
+    confidence: bill.merchant.confidence,
+    sourceOCRPass: "processed-full",
+  });
+  assert.equal(bill.evidence.date.originalText, "05/11/2026");
+  assert.deepEqual(bill.evidence.date.sourceBlockIds, ["block-1"]);
+  assert.deepEqual(bill.evidence.date.sourceWordIds, ["block-1-p0-l0-w2"]);
+  assert.equal(bill.evidence.date.matchingLabel, "Invoice Date");
+  assert.equal(bill.evidence.date.reason, "explicit invoice-date label");
+  assert.equal(bill.evidence.total.originalText, "₹350.00");
+  assert.deepEqual(bill.evidence.total.sourceBlockIds, ["block-2"]);
+  assert.deepEqual(bill.evidence.total.sourceWordIds, ["block-2-p0-l0-w3"]);
+  assert.equal(bill.evidence.total.matchingLabel, "Invoice Amount Payable");
+  assert.equal(
+    bill.evidence.total.reason,
+    "matched payable label and amount on the same line"
+  );
+  assert.equal(bill.evidence.total.sourceOCRPass, "processed-full");
+});
+
+test("retains noisy merchant OCR text separately from the normalized value", () => {
+  const bill = extractBillData(
+    makeOCRInput("NIDH| MOTORS\nReceipt\nTotal GBP 13.50", [
+      makeOCRBlock(["NIDH|", "MOTORS"], 10),
+      makeOCRBlock(["Receipt"], 40),
+      makeOCRBlock(["Total", "GBP", "13.50"], 70),
+    ])
+  );
+
+  assert.equal(bill.merchant.value, "NIDHIMOTORS");
+  assert.equal(bill.evidence.merchant.originalText, "NIDH| MOTORS");
+  assert.deepEqual(bill.evidence.merchant.sourceBlockIds, ["block-0"]);
+});
+
+test("preserves merchant prefixes in raw evidence while keeping normalized value", () => {
+  const bill = extractBillData(
+    makeOCRInput("M/s Bluebird Retail\nReceipt\nTotal GBP 13.50", [
+      makeOCRBlock(["M/s", "Bluebird", "Retail"], 10),
+      makeOCRBlock(["Receipt"], 40),
+      makeOCRBlock(["Total", "GBP", "13.50"], 70),
+    ])
+  );
+
+  assert.equal(bill.merchant.value, "BLUEBIRD RETAIL");
+  assert.equal(bill.evidence.merchant.originalText, "M/s Bluebird Retail");
+  assert.deepEqual(bill.evidence.merchant.sourceWordIds, [
+    "block-0-p0-l0-w0",
+    "block-0-p0-l0-w1",
+    "block-0-p0-l0-w2",
+  ]);
+});
+
+test("represents missing OCR geometry and string-only input without fabricated IDs", () => {
+  const text = [
+    "Merchant: Bluebird Retail",
+    "Invoice Date: 05/11/2026",
+    "Invoice Amount Payable ₹350.00",
+  ].join("\n");
+  const withoutGeometry = extractBillData(makeOCRInput(text));
+  const stringInput = extractBillData(text);
+
+  assert.equal(withoutGeometry.merchant.value, "BLUEBIRD RETAIL");
+  assert.equal(withoutGeometry.evidence.merchant.originalText, "Bluebird Retail");
+  assert.equal(withoutGeometry.evidence.merchant.matchingLabel, "Merchant");
+  assert.equal(withoutGeometry.evidence.merchant.sourceBlockIds, null);
+  assert.equal(withoutGeometry.evidence.merchant.sourceWordIds, null);
+  assert.equal(withoutGeometry.evidence.merchant.sourceOCRPass, "processed-full");
+  assert.equal(withoutGeometry.evidence.total.sourceBlockIds, null);
+  assert.equal(withoutGeometry.evidence.total.sourceWordIds, null);
+
+  assert.equal(stringInput.evidence.date.originalText, "05/11/2026");
+  assert.equal(stringInput.evidence.date.sourceBlockIds, null);
+  assert.equal(stringInput.evidence.date.sourceWordIds, null);
+  assert.equal(stringInput.evidence.date.sourceOCRPass, null);
+});
+
+test("traces the selected candidate when merchant and payable candidates compete", () => {
+  const text = [
+    "Bluebird Retail",
+    "Greenfield Motors",
+    "Grand Total GBP 375.00",
+    "Invoice Amount Payable GBP 350.00",
+  ].join("\n");
+  const evidence = makeOCRInput(text, [
+    makeOCRBlock(["Bluebird", "Retail"], 10),
+    makeOCRBlock(["Greenfield", "Motors"], 40),
+    makeOCRBlock(["Grand", "Total", "GBP", "375.00"], 70),
+    makeOCRBlock(["Invoice", "Amount", "Payable", "GBP", "350.00"], 100),
+  ]);
+  const bill = extractBillData(evidence);
+
+  assert.equal(bill.merchant.value, "GREENFIELD MOTORS");
+  assert.deepEqual(bill.evidence.merchant.sourceBlockIds, ["block-1"]);
+  assert.equal(bill.evidence.merchant.originalText, "Greenfield Motors");
+  assert.equal(bill.total.value, 350);
+  assert.deepEqual(bill.evidence.total.sourceBlockIds, ["block-3"]);
+  assert.equal(bill.evidence.total.matchingLabel, "Invoice Amount Payable");
+  assert.equal(bill.evidence.total.originalText, "GBP 350.00");
+});
+
+test("records selected amount IDs without combining nearby label IDs", () => {
+  const text = ["Invoice Amount Payable", "GBP 350.00"].join("\n");
+  const bill = extractBillData(
+    makeOCRInput(text, [
+      makeOCRBlock(["Invoice", "Amount", "Payable"], 10),
+      makeOCRBlock(["GBP", "350.00"], 40),
+    ])
+  );
+
+  assert.equal(bill.total.value, 350);
+  assert.equal(bill.evidence.total.originalText, "GBP 350.00");
+  assert.equal(bill.evidence.total.matchingLabel, "Invoice Amount Payable");
+  assert.deepEqual(bill.evidence.total.sourceBlockIds, ["block-1"]);
+  assert.deepEqual(bill.evidence.total.sourceWordIds, [
+    "block-1-p0-l0-w0",
+    "block-1-p0-l0-w1",
+  ]);
+});
+
+test("does not return label IDs when selected amount geometry is missing", () => {
+  const text = ["Invoice Amount Payable", "GBP 350.00"].join("\n");
+  const bill = extractBillData(
+    makeOCRInput(text, [makeOCRBlock(["Invoice", "Amount", "Payable"], 10)])
+  );
+
+  assert.equal(bill.total.value, 350);
+  assert.equal(bill.evidence.total.originalText, "GBP 350.00");
+  assert.equal(bill.evidence.total.matchingLabel, "Invoice Amount Payable");
+  assert.equal(bill.evidence.total.sourceBlockIds, null);
+  assert.equal(bill.evidence.total.sourceWordIds, null);
+});
+
+test("returns unavailable amount IDs when neither label nor value geometry exists", () => {
+  const text = ["Invoice Amount Payable", "GBP 350.00"].join("\n");
+  const bill = extractBillData(makeOCRInput(text));
+
+  assert.equal(bill.total.value, 350);
+  assert.equal(bill.evidence.total.originalText, "GBP 350.00");
+  assert.equal(bill.evidence.total.sourceBlockIds, null);
+  assert.equal(bill.evidence.total.sourceWordIds, null);
+});
+
+test("maps a repeated amount to only the occurrence selected after its payable label", () => {
+  const text = "Invoice Amount Payable GBP 350.00 Paid GBP 350.00";
+  const bill = extractBillData(
+    makeOCRInput(text, [
+      makeOCRBlock(
+        ["Invoice", "Amount", "Payable", "GBP", "350.00", "Paid", "GBP", "350.00"],
+        10
+      ),
+    ])
+  );
+
+  assert.equal(bill.total.value, 350);
+  assert.deepEqual(bill.evidence.total.sourceWordIds, [
+    "block-0-p0-l0-w3",
+    "block-0-p0-l0-w4",
+  ]);
+});
+
+test("maps repeated amounts on separate lines only to the selected payable line", () => {
+  const text = [
+    "Invoice Amount Payable GBP 350.00",
+    "Payment Received GBP 350.00",
+  ].join("\n");
+  const bill = extractBillData(
+    makeOCRInput(text, [
+      makeOCRBlock(["Invoice", "Amount", "Payable", "GBP", "350.00"], 10),
+      makeOCRBlock(["Payment", "Received", "GBP", "350.00"], 40),
+    ])
+  );
+
+  assert.equal(bill.total.value, 350);
+  assert.deepEqual(bill.evidence.total.sourceBlockIds, ["block-0"]);
+  assert.deepEqual(bill.evidence.total.sourceWordIds, [
+    "block-0-p0-l0-w3",
+    "block-0-p0-l0-w4",
+  ]);
+});
+
+test("maps a repeated date to the invoice-date occurrence, not an unrelated date", () => {
+  const text = [
+    "Invoice Date: 05/11/2026",
+    "Next Service Due: 05/11/2026",
+    "Total GBP 13.50",
+  ].join("\n");
+  const bill = extractBillData(
+    makeOCRInput(text, [
+      makeOCRBlock(["Invoice", "Date:", "05/11/2026"], 10),
+      makeOCRBlock(["Next", "Service", "Due:", "05/11/2026"], 40),
+      makeOCRBlock(["Total", "GBP", "13.50"], 70),
+    ])
+  );
+
+  assert.equal(bill.date.value, "05-11-2026");
+  assert.deepEqual(bill.evidence.date.sourceBlockIds, ["block-0"]);
+  assert.deepEqual(bill.evidence.date.sourceWordIds, ["block-0-p0-l0-w2"]);
+});
+
+test("returns unavailable IDs when exact candidate lines repeat in different sections", () => {
+  const line = "Invoice Amount Payable GBP 350.00";
+  const bill = extractBillData(
+    makeOCRInput([line, "Store Copy", line].join("\n"), [
+      makeOCRBlock(["Invoice", "Amount", "Payable", "GBP", "350.00"], 10),
+      makeOCRBlock(["Store", "Copy"], 40),
+      makeOCRBlock(["Invoice", "Amount", "Payable", "GBP", "350.00"], 70),
+    ])
+  );
+
+  assert.equal(bill.total.value, 350);
+  assert.equal(bill.evidence.total.originalText, "GBP 350.00");
+  assert.equal(bill.evidence.total.sourceBlockIds, null);
+  assert.equal(bill.evidence.total.sourceWordIds, null);
+});
+
+test("does not attribute evidence to a near-duplicate geometry line", () => {
+  const text = "Invoice Amount Payable GBP 350.00";
+  const bill = extractBillData(
+    makeOCRInput(text, [
+      makeOCRBlock(["Invoice", "Amount", "Payable", "GBP", "350.01"], 10),
+    ])
+  );
+
+  assert.equal(bill.total.value, 350);
+  assert.equal(bill.evidence.total.originalText, "GBP 350.00");
+  assert.equal(bill.evidence.total.sourceBlockIds, null);
+  assert.equal(bill.evidence.total.sourceWordIds, null);
+});
+
+test("limits evidence IDs to the selected date on a shared OCR line", () => {
+  const text =
+    "Invoice Date: 05/11/2026 Next Service Due: 05/11/2027\nTotal GBP 13.50";
+  const bill = extractBillData(
+    makeOCRInput(text, [
+      makeOCRBlock(
+        [
+          "Invoice",
+          "Date:",
+          "05/11/2026",
+          "Next",
+          "Service",
+          "Due:",
+          "05/11/2027",
+        ],
+        10
+      ),
+      makeOCRBlock(["Total", "GBP", "13.50"], 50),
+    ])
+  );
+
+  assert.equal(bill.date.value, "05-11-2026");
+  assert.deepEqual(bill.evidence.date.sourceWordIds, ["block-0-p0-l0-w2"]);
+});
+
+test("leaves source evidence unavailable for conflicting date and amount candidates", () => {
+  const text = [
+    "Invoice Date: 05/11/2026",
+    "Receipt Date: 06/11/2026",
+    "Total GBP 13.50",
+    "Total GBP 14.50",
+  ].join("\n");
+  const evidence = makeOCRInput(text, [
+    makeOCRBlock(["Invoice", "Date:", "05/11/2026"], 10),
+    makeOCRBlock(["Receipt", "Date:", "06/11/2026"], 40),
+    makeOCRBlock(["Total", "GBP", "13.50"], 70),
+    makeOCRBlock(["Total", "GBP", "14.50"], 100),
+  ]);
+  const bill = extractBillData(evidence);
+
+  assert.equal(bill.date.value, null);
+  assert.equal(bill.evidence.date.selectedValue, null);
+  assert.equal(bill.evidence.date.originalText, null);
+  assert.equal(bill.evidence.date.sourceBlockIds, null);
+  assert.equal(bill.evidence.date.reason, "conflicting labeled invoice dates");
+  assert.equal(bill.total.value, null);
+  assert.equal(bill.evidence.total.selectedValue, null);
+  assert.equal(bill.evidence.total.originalText, null);
+  assert.equal(bill.evidence.total.sourceWordIds, null);
+  assert.equal(
+    bill.evidence.total.reason,
+    "conflicting equally ranked payable amount candidates"
+  );
+});
+
+test("keeps evidence tied to processed-full when an alternate pass conflicts", () => {
+  const text = "Invoice Amount Payable ₹350.00";
+  const primaryBlocks = [makeOCRBlock(["Invoice", "Amount", "Payable", "₹350.00"], 10)];
+  const primaryConverted = convertOCRBlocks(primaryBlocks);
+  const primary: OCRPassResult = {
+    source: "processed-full",
+    text,
+    confidence: 55,
+    pageSegmentationMode: "3",
+    region: null,
+    width: 800,
+    height: 1200,
+    blocks: primaryConverted,
+    lines: groupOCRWordsIntoLines(
+      primaryConverted.flatMap((block) => block.words)
+    ),
+  };
+  const alternate: OCRPassResult = {
+    ...primary,
+    source: "original-full",
+    text: "Invoice Amount Payable ₹900.00",
+    blocks: convertOCRBlocks([
+      makeOCRBlock(["Invoice", "Amount", "Payable", "₹900.00"], 10),
+    ]),
+    lines: [],
+  };
+  const bill = extractBillData(combineOCRPasses([primary, alternate]));
+
+  assert.equal(bill.total.value, 350);
+  assert.equal(bill.evidence.total.sourceOCRPass, "processed-full");
+  assert.deepEqual(bill.evidence.total.sourceBlockIds, ["block-0"]);
+  assert.equal(bill.evidence.total.originalText, "₹350.00");
 });
