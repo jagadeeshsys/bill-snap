@@ -159,4 +159,52 @@ The results show that the current approach needs improvement, particularly in no
 - Evaluate a lightweight on-device bill classification model.
 - Expand the evaluation dataset with more varied receipts.
 
+## Release preparation evidence review (2026-11-06)
+
+No fresh receipt-evaluation run was performed against the Phase 4 release
+build. The results below describe only the older retained records and must not
+be presented as current-release predictions or as an improvement measurement.
+
+### Historical classification record
+
+The `classification_result` and `predicted_type` columns in
+`evaluation.csv` record 6 bill outcomes as `Bill`, 9 bill outcomes as
+`Uncertain`, 1 non-bill outcome as `Non-bill`, and 4 non-bill outcomes as
+`Uncertain`. For that historical record, strict accuracy is **7/20 (35%)**:
+all 20 outcomes are captured, and all 13 `Uncertain` outcomes count as
+incorrect. This is not a measurement of the current release.
+
+### Field, currency, and correction evidence
+
+- The historical CSV contains field labels such as `Not extracted`, but it
+  predates the current evidence-status distinctions. Where the app output or
+  verified ground truth cannot be established from retained evidence, those
+  labels are not reclassified as genuinely blank or incorrect. No release
+  field-accuracy rates are reported.
+- In `evaluation_phase2_1.csv`, ground-truth field verification is blank for
+  all 20 rows; 19 classification outputs are marked unavailable, and all 20
+  currency outputs are unavailable. The one captured B06 observation is not a
+  complete or current-build evaluation. These values are not release accuracy
+  data.
+- Currency extraction is not exposed by the review UI. No currency accuracy
+  is reported.
+- Manual corrections are not captured as a complete paired set of initial
+  predictions and corrected values. Corrections are not counted as OCR
+  successes.
+- Ground-truth merchant, date, total, currency, and category values require
+  manual verification against their source images before a new accuracy
+  calculation.
+
+### Supplemental cohort and next evaluation
+
+B16–B29 remain a separate, unscored supplemental cohort. Their class and field
+ground truth have not been verified for this release. Follow
+`evaluation_protocol_phase3.md` and record results in a new run CSV; do not
+overwrite either historical CSV. Distinguish verified outcomes, unverified
+ground truth, unavailable output, genuinely blank fields, uncertainty, and
+manual corrections as specified in the protocol.
+
+The tests, lint, build, and application smoke checks validate software
+behavior, not receipt-field accuracy. No accuracy improvement is claimed.
+
 EOF

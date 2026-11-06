@@ -1,227 +1,158 @@
-# Bill Snap — Smart Bill Scanner & Expense Tracker
+# Bill Snap
 
-Bill Snap is a browser-based bill scanning and expense tracking application built with React, TypeScript and Tesseract.js.
-
-It extracts information from bill images using OCR, identifies potential bills, suggests expense categories and allows users to review and correct extracted information before saving.
-
-The application uses browser-based OCR and IndexedDB for local data storage. No paid OCR API or external backend is required.
+Bill Snap is a local-first receipt scanner and expense manager. It helps people
+turn receipt photos into editable transaction records, organize everyday
+spending, and keep their financial information on their own device.
 
 ## Features
 
-- **Bill Image Upload:** Select bill images from the device.
-- **Image Preprocessing:** Validate, resize and optimize images before OCR.
-- **OCR Processing:** Extract text using Tesseract.js.
-- **Bill Classification:** Identify bills, non-bills and uncertain documents using transaction-related signals.
-- **Data Extraction:** Extract merchant name, bill date and total payable amount.
-- **Category Suggestions:** Suggest expense categories based on extracted information.
-- **Manual Review:** Review and correct uncertain or incorrectly extracted fields.
-- **Local Storage:** Save bill records in browser IndexedDB.
-- **Duplicate Detection:** Identify potential duplicate bills.
-- **Expense Dashboard:** View saved bills and monthly/category spending summaries.
+- Capture a receipt with a supported device camera or upload an image from the
+  gallery.
+- Preprocess receipt images and use Tesseract.js OCR to extract merchant, date,
+  payable amount, currency metadata, and a suggested category.
+- Classify an image as a bill, non-bill, or uncertain.
+- Review extraction confidence and correct fields before saving.
+- Keep saved receipt metadata and local preferences in IndexedDB.
+- Search transactions by merchant; filter by category, date, and amount; sort,
+  edit, and delete saved transactions.
+- View spending summaries, category breakdowns, and monthly trends, keeping
+  currency totals separate and unknown currency in its own group.
+- Store an optional local profile, preferences, and a currency-specific monthly
+  budget.
+- Export saved transactions to CSV and export/restore a versioned JSON backup.
 
-## Technology Stack
+## Technology stack
 
-| Component | Technology |
+| Area | Technology |
 |---|---|
-| Frontend | React 19 |
-| Language | TypeScript |
-| Build Tool | Vite |
-| OCR Engine | Tesseract.js |
-| Database | IndexedDB |
-| Styling | CSS |
-| Testing | Node.js built-in test runner |
-| Code Quality | ESLint |
+| UI | React 19, TypeScript |
+| Build and development server | Vite |
+| OCR | Tesseract.js |
+| Local persistence | IndexedDB |
+| PWA | `vite-plugin-pwa` and Workbox-generated service worker |
+| Styling and icons | CSS, lucide-react |
+| Tests | Node.js built-in test runner |
+| Linting | ESLint |
 
-## Application Architecture
+No application backend, account system, or cloud receipt store is used.
 
-The application follows a modular service-based architecture.
-
-```text
-User uploads bill image
-        |
-        v
-Image Validation & Preprocessing
-        |
-        v
-OCR Processing (Tesseract.js)
-        |
-        v
-Full Image + Focused Region OCR
-        |
-        v
-Bill Classification
-        |
-        v
-Information Extraction
-        |
-        +-----------------------+
-        |                       |
-        v                       v
- Merchant / Date / Total    Category Suggestion
-        |                       |
-        +-----------+-----------+
-                    |
-                    v
-              Review Screen
-                    |
-                    v
-          User Correction & Review
-                    |
-                    v
-             IndexedDB Storage
-                    |
-                    v
-             Expense Dashboard
-```
-
-### Project Structure
+## Architecture and data flow
 
 ```text
-bill-snap/
-├── public/
-├── ml-evaluation/
-│   ├── test-images/
-│   │   ├── bills/
-│   │   └── non-bills/
-│   └── results/
-│       ├── evaluation.csv
-│       ├── evaluation_report.md
-│       └── failure_analysis.md
-├── src/
-│   ├── assets/
-│   ├── services/
-│   │   ├── billClassifier.ts
-│   │   ├── billProcessor.ts
-│   │   ├── currency.ts
-│   │   ├── dashboardMetrics.ts
-│   │   ├── extractor.ts
-│   │   ├── image.ts
-│   │   ├── ocr.ts
-│   │   └── storage.ts
-│   ├── App.tsx
-│   ├── App.css
-│   └── index.css
-├── tests/
-├── package.json
-└── README.md
+Camera or gallery image
+        |
+        v
+Image validation and preprocessing (src/services/image.ts)
+        |
+        v
+OCR passes and geometry evidence (src/services/ocr.ts, ocrEvidence.ts)
+        |
+        v
+Bill classification and field/currency extraction
+        |
+        v
+Review, manual correction, and category selection (src/App.tsx)
+        |
+        v
+Receipt metadata in IndexedDB (src/services/storage.ts)
+        |
+        +--> Transaction search, filters, sorting, edits, and deletion
+        +--> Currency-separated dashboard and analytics
+        +--> CSV export and versioned JSON backup/restore
 ```
 
-## Getting Started
+`src/App.tsx` coordinates the application screens and user actions. Business
+logic is separated into services: `billProcessor.ts`, `image.ts`, `ocr.ts`,
+`billClassifier.ts`, and `extractor.ts` process receipts;
+`expenseManagement.ts` and `analytics.ts` query and summarize saved
+transactions; `localSettings.ts` and `backup.ts` handle preferences and
+user-controlled data transfer. Focused tests are under `tests/`.
 
-### Prerequisites
+The IndexedDB `bills` store contains receipt transaction fields and the image
+filename, not the original receipt image bytes. Profile/preferences are kept in
+a separate versioned settings record. Restores validate the backup, preview
+duplicate handling, require confirmation, and write receipt/settings changes
+atomically.
 
-- Node.js
-- npm
-- Git
+## Privacy and security
 
-### Installation
+- OCR processing and data management happen in the browser.
+- There is no login, authentication, backend, or cloud receipt storage.
+- Receipt records and settings are stored in the browser's IndexedDB for the
+  current browser profile and device.
+- CSV and JSON files are generated locally. A JSON backup is user-controlled;
+  it is not uploaded by the app.
+- Browser/device storage is not synchronized. Clearing site data, losing the
+  device, or browser storage eviction may permanently remove records. Export
+  backups regularly and store them somewhere safe.
+- Receipt images are not retained as image records by the app; the receipt
+  filename is kept with the saved transaction.
 
-Clone the repository:
+## Install and run locally
+
+Prerequisites: Node.js 22 or newer and npm.
 
 ```bash
 git clone https://github.com/jagadeeshsys/bill-snap.git
 cd bill-snap
-```
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Start the development server:
-
-```bash
+npm ci
 npm run dev
 ```
 
-Open the local URL displayed by Vite, normally:
+Open the local URL printed by Vite (the Pages base path is `/bill-snap/`).
 
-```text
-http://localhost:5173
-```
-
-### Production Build
-
-```bash
-npm run build
-```
-
-### Run Tests
+Run the test suite, lint, or a production build:
 
 ```bash
 npm test
-```
-
-### Run ESLint
-
-```bash
 npm run lint
+npm run build
 ```
 
-## OCR and Data Processing
+## PWA, network, and offline behavior
 
-Bill Snap uses Tesseract.js to perform OCR directly in the browser.
+The production build includes a web app manifest, app icons, and a service
+worker. The service worker precaches the built app shell and serves the
+single-page app entry point for in-scope navigation. It does not cache
+IndexedDB records or user receipt data.
 
-The image processing pipeline includes:
+The hosted app is served over HTTPS and can be installed from supported
+browsers. OCR assets are not included in the app-shell precache. Tesseract.js
+may need its worker and language assets from its configured external CDN, so
+OCR on a fresh offline session is not guaranteed. The app shell can load
+offline after it has been cached; that does not imply all OCR functionality is
+available offline.
 
-1. Image validation and size checks.
-2. Image resizing and optimization.
-3. Full-image OCR.
-4. Focused OCR on a selected receipt region.
-5. Combining OCR results.
-6. Classifying the document.
-7. Extracting merchant, date and total payable amount.
-8. Presenting extracted information for user review.
+## GitHub Pages deployment
 
-The extraction and classification logic uses rule-based heuristics. It is not a trained machine-learning model.
+The deployed application is available at
+[https://jagadeeshsys.github.io/bill-snap/](https://jagadeeshsys.github.io/bill-snap/).
 
-## Evaluation
+The repository's `.github/workflows/deploy.yml` builds the app and deploys
+`dist/` to GitHub Pages on pushes to `main` or a manual workflow dispatch.
+Configure GitHub Pages to use **GitHub Actions** as its source. Check the
+workflow run and open the URL above after each release; a successful local
+build alone does not confirm a deployment.
 
-The evaluation dataset contains:
+## Receipt evaluation
 
-- 15 real bill images, including difficult and low-quality samples.
-- 5 non-bill images.
+Evaluation records and protocols are in `ml-evaluation/results/`. The
+20-image core cohort consists of 15 bill images and 5 non-bill images.
+`evaluation.csv` is a historical record; `evaluation_phase2_1.csv` is a
+prepared run file whose blank verified-ground-truth fields and unavailable
+predictions must not be interpreted as measured accuracy. The Phase 3 protocol
+and template define how to conduct a new run without overwriting history.
 
-Evaluation results, individual test records and failure analysis are available here:
+The supplemental B16–B29 images are separate from the core cohort and require
+manual ground-truth verification before scoring. See the evaluation report
+and failure analysis for the evidence and limitations.
 
-- `ml-evaluation/results/evaluation.csv`
-- `ml-evaluation/results/evaluation_report.md`
-- `ml-evaluation/results/failure_analysis.md`
+## Known limitations
 
-The evaluation examines bill classification, extracted field correctness and cases where OCR or extraction fails.
-
-## Privacy and Data Storage
-
-- OCR processing runs in the browser.
-- Bill records are stored locally using IndexedDB.
-- No external OCR API is required.
-- No application backend is required for the current implementation.
-
-Saved data is browser/device-specific and is not automatically synchronized between devices.
-
-## Current Limitations
-
-- OCR accuracy depends on image quality, lighting, orientation and receipt layout.
-- Handwritten bills are difficult to process reliably.
-- Merchant and total extraction may fail on unfamiliar invoice formats.
-- Classification and extraction use heuristics rather than a trained ML model.
-- Confidence indicators are heuristic estimates, not calibrated probabilities.
-- Manual review is necessary when extracted information is uncertain.
-
-## Future Improvements
-
-- Improve OCR accuracy for regional and multilingual receipts.
-- Improve merchant and total extraction across different invoice formats.
-- Add more robust bill classification.
-- Explore lightweight on-device machine-learning models.
-- Add export functionality for expense records.
-- Improve offline and installable PWA support.
-
-## Author
-
-**Jagadeesh**
-
-GitHub: [@jagadeeshsys](https://github.com/jagadeeshsys)
-
-Project Repository: [Bill Snap](https://github.com/jagadeeshsys/bill-snap)
+- OCR and extraction quality depend on image quality, layout, and language.
+- Classification and extraction use rules and heuristics, not a trained
+  machine-learning model.
+- Confidence values are heuristic and are not calibrated probabilities.
+- Currency detection is not exposed as a prediction in the receipt review UI;
+  currency accuracy cannot be measured from a UI-only evaluation.
+- Local-only storage has no synchronization or server-side recovery.

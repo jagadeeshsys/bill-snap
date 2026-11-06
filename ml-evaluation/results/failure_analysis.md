@@ -131,3 +131,31 @@ The current approach has limitations:
 7. Expand the test dataset with more handwritten, blurry and angled bill images.
 
 The main lesson from this evaluation is that OCR text recognition alone is not sufficient. Correct document classification, contextual field extraction and user review are all important.
+
+## Release preparation evidence review (2026-11-06)
+
+The preceding failure examples are historical observations from an earlier
+application revision; they have not been reproduced against the Phase 4 release
+build. Treat them as investigation leads, not as verified current-release
+failures.
+
+The retained `evaluation.csv` includes mixed evidence and older status labels.
+In particular, `Not extracted` does not reliably distinguish a visibly blank
+field from an unavailable app output. `evaluation_phase2_1.csv` has no verified
+field ground truth and marks most app outputs unavailable. Accordingly, no
+current merchant/date/total/category/currency failure rates can be calculated
+from those files.
+
+No currency prediction is exposed in the review UI, so currency extraction
+accuracy was not evaluated. Manual corrections are not recorded as separate
+paired initial and corrected outcomes and are not credited as initial OCR
+successes. B16–B29 remain outside the core cohort until their ground truth is
+verified.
+
+The functional test suite and browser smoke checks cover application behavior,
+including local settings, receipt management, analytics, backup/restore, and
+responsive rendering. They do not measure extraction accuracy. Re-run the
+Phase 3 protocol on a fixed release build, preserve the original predictions,
+and record each uncertainty, unavailable result, blank field, correction, and
+ground-truth verification independently before updating quantitative failure
+claims.
