@@ -1,41 +1,77 @@
-# Bill Snap — Release Evaluation
+# Bill Snap full image evaluation
 
-## Fixed submission cohort
+Run: 2026-11-06T15:43:21.731Z. Dataset: 34 images, manually checked against the supplied images and labeled in [test-manifest.json](../test-manifest.json).
 
-Evaluate exactly 20 tracked images:
+## Method and scope
 
-- Bills: `test-images/bills/B1.JPG` through `B15.jpg` (15 images)
-- Non-bills: `test-images/non-bills/NB1.JPG` through `NB5.jpg` (5 images)
+The runner applies Tesseract.js to each original source image, then uses the same bill classifier and extractor modules as the app. This isolates OCR and downstream rules, but does not execute the app’s browser canvas resizing, compression, header crop, optional original-image pass, or contrast pass. Treat this as a reproducible diagnostic; it is not a device/browser end-to-end test.
 
-The untracked `B16`–`B29` files are supplemental and are not part of the
-submission score.
+Field correctness is exact after case/punctuation normalization for merchant, date, and category, and within 0.01 for total. Expected fields were transcribed by visual review. B17 is a jewelry replacement valuation rather than a purchase receipt. Blank expected values are omitted where the image did not provide a reliable ground truth.
 
-## How to record a release run
+## Classification
 
-1. Build the production app with `npm run build` and record the Git commit.
-2. For each fixed image, use the production app's gallery flow once. Do not
-   edit the initial prediction before recording it.
-3. Verify merchant, date, total, currency, and category from the source image.
-   Mark a field `unverifiable` rather than guessing.
-4. Record the initial class and fields in `evaluation_release_template.csv`.
-   Record a correction separately; a correction is not an OCR success.
-5. Count an uncertain result as a failed classification for the bill/not-bill
-   metric. The app intentionally blocks saving uncertain images.
+Correct classifications: **30/34** (88.2%). Uncertain predictions count as incorrect in this accuracy figure.
 
-## Reporting rules
+| Expected | Predicted bill | Predicted uncertain | Predicted not bill |
+|---|---:|---:|---:|
+| bill | 26 | 2 | 0 |
+| not_bill | 0 | 2 | 4 |
 
-Report only rates calculated from rows with verified ground truth and a
-recorded initial prediction. Distinguish `blank`, `unavailable`, `uncertain`,
-and `incorrect`; they are not interchangeable.
+## Field correctness
 
-`evaluation.csv`, `evaluation_phase2_1.csv`, and the older failure analysis
-are historical investigation notes. They must not be presented as results from
-this release.
+| Field | Correct | Evaluated |
+|---|---:|---:|
+| merchant | 7 | 28 |
+| date | 16 | 27 |
+| total | 15 | 28 |
+| category | 25 | 28 |
 
-## Expected release limitations
+## Per-image results
 
-The app uses local Tesseract OCR and transparent rules rather than a trained
-vision classifier. Crumpled, angled, blurry, tiny-text, and handwritten bills
-may be blocked as uncertain or require field correction. Non-document photos
-with little or no text are conservatively blocked rather than converted into
-editable expenses.
+| Image | Expected | Predicted | Class | Merchant | Date | Total | Category |
+|---|---|---|---|---:|---:|---:|---:|
+| B16.JPG | bill | bill | ✓ | ✗ | ✓ | ✓ | ✓ |
+| B17.JPG | not_bill | not_bill | ✓ | — | — | — | — |
+| B18.JPG | bill | bill | ✓ | ✓ | ✗ | ✓ | ✓ |
+| B19.JPG | bill | uncertain | ✗ | ✗ | ✗ | ✗ | ✗ |
+| B20.jpeg | bill | bill | ✓ | ✗ | ✗ | ✗ | ✓ |
+| B21.JPG | bill | bill | ✓ | ✓ | ✓ | ✗ | ✓ |
+| B22.JPG | bill | bill | ✓ | ✗ | ✓ | ✗ | ✓ |
+| B23.JPG | bill | bill | ✓ | ✓ | ✓ | ✓ | ✓ |
+| B24.JPG | bill | bill | ✓ | ✗ | ✓ | ✗ | ✓ |
+| B25.JPG | bill | bill | ✓ | ✗ | ✗ | ✓ | ✓ |
+| B26.JPG | bill | uncertain | ✗ | ✗ | ✗ | ✗ | ✗ |
+| B27.JPG | bill | bill | ✓ | ✗ | ✓ | ✓ | ✓ |
+| B28.JPG | bill | bill | ✓ | ✗ | ✗ | ✓ | ✓ |
+| B29.JPG | bill | bill | ✓ | ✓ | ✗ | ✗ | ✓ |
+| bills/B1.JPG | bill | bill | ✓ | ✗ | — | ✓ | ✓ |
+| bills/B10.JPG | bill | bill | ✓ | ✗ | ✗ | ✗ | ✓ |
+| bills/B11.JPG | bill | bill | ✓ | ✗ | ✓ | ✓ | ✓ |
+| bills/B12.jpg | bill | bill | ✓ | ✗ | ✓ | ✓ | ✓ |
+| bills/B13.jpg | bill | bill | ✓ | ✗ | ✓ | ✓ | ✓ |
+| bills/B14.jpg | bill | bill | ✓ | ✗ | ✗ | ✗ | ✗ |
+| bills/B15.jpg | bill | bill | ✓ | ✓ | ✓ | ✓ | ✓ |
+| bills/B2.JPG | bill | bill | ✓ | ✗ | ✗ | ✗ | ✓ |
+| bills/B3.JPG | bill | bill | ✓ | ✓ | ✓ | ✓ | ✓ |
+| bills/B4.JPG | bill | bill | ✓ | ✗ | ✓ | ✗ | ✓ |
+| bills/B5.JPG | bill | bill | ✓ | ✓ | ✓ | ✓ | ✓ |
+| bills/B6.JPG | bill | bill | ✓ | ✗ | ✓ | ✓ | ✓ |
+| bills/B7.JPG | bill | bill | ✓ | ✗ | ✗ | ✗ | ✓ |
+| bills/B8.JPG | bill | bill | ✓ | ✗ | ✓ | ✗ | ✓ |
+| bills/B9.JPG | bill | bill | ✓ | ✗ | ✓ | ✓ | ✓ |
+| non-bills/NB1.JPG | not_bill | not_bill | ✓ | — | — | — | — |
+| non-bills/NB2.jpg | not_bill | uncertain | ✗ | — | — | — | — |
+| non-bills/NB3.jpg | not_bill | not_bill | ✓ | — | — | — | — |
+| non-bills/NB4.jpg | not_bill | uncertain | ✗ | — | — | — | — |
+| non-bills/NB5.jpg | not_bill | not_bill | ✓ | — | — | — | — |
+
+The full OCR text, extracted values, confidence/review flags, expected values, and per-field comparisons are in [latest-run.json](./latest-run.json).
+
+## Reproduce
+
+```bash
+node --experimental-strip-types ml-evaluation/run-evaluation.mjs
+npm test
+npm run lint
+npm run build
+```

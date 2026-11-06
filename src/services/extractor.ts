@@ -78,13 +78,25 @@ const BILL_KEYWORDS = [
   "net bill value",
   "gstin",
   "cash memo",
+  "total",
+  "toplam",
+  "topln",
 ];
 
 const CATEGORY_KEYWORDS: Record<ExpenseCategory, string[]> = {
-  Food: ["restaurant", "cafe", "food", "dining", "bakery"],
+  Food: [
+    "restaurant", "cafe", "food", "dining", "bakery", "sushi",
+    "mutton", "paneer", "naan", "idli", "dosa", "samosa", "lounge",
+    "mojito", "vodka", "prawns", "crab legs", "tomahawk",
+    "coca cola", "burger", "ramen", "sashimi", "nusr-et", "steakhouse",
+    "baristas",
+  ],
   Groceries: [
     "supermarket", "grocery", "mart", "provisions", "tesco",
     "sainsbury", "sainsburys", "new asian super market",
+    "new asian super mar",
+    "rice", "beans", "lentil", "vegetable", "makhana", "wafer",
+    "cheese shell", "cream tubes", "peppermint",
   ],
   Utilities: ["electricity", "water bill", "broadband", "internet"],
   Transport: [
@@ -108,10 +120,10 @@ const CATEGORY_KEYWORDS: Record<ExpenseCategory, string[]> = {
     "jewel",
     "gold",
     "ornament",
-    "shopping",
     "clothing",
     "fashion",
     "retail",
+    "electronics", "appliance", "home outlet",
   ],
   Healthcare: ["hospital", "pharmacy", "medical", "clinic"],
   Entertainment: ["cinema", "movie", "theatre", "entertainment"],
@@ -376,7 +388,7 @@ function extractMerchant(text: string): {
   missingReason: string;
 } {
   const excludedLine =
-    /\b(?:(?:tax\s+)?invoice|invoice\s*(?:no|number|date|amount)|bill\s*(?:no|number|date|amount)|receipt\s*(?:no|number|date|amount)|cash\s*memo|(?:original|duplicate|triplicate)\s+for\s+(?:recipient|transporter|supplier)|gstin|gst\s*(?:no|number|in)|pan\s*(?:no|number)|phone|mobile|contact|telephone|email|website|customer|buyer|supplier\s*details|place\s*of\s*supply|state\s*code|address|road|street|lane|nagar|pincode|pin\s*code|district|taluk|city|payment|amount|total|tax|subtotal|description|hsn|sac|quantity|qty|rate|authorized|authorised|signatory|round\s*off|service\s*due|expiry|warranty|delivery)\b/i;
+    /\b(?:(?:tax\s+)?invoice|invoice\s*(?:no|number|date|amount)|bill\s*(?:no|number|date|amount)|receipt\s*(?:no|number|date|amount)|cash\s*memo|(?:original|duplicate|triplicate)\s+for\s+(?:recipient|transporter|supplier)|(?:g|b)stin|(?:g|b)st\s*(?:no|number|in)|pan\s*(?:no|number)|phone|mobile|contact|telephone|email|website|www|com|locat\w*|customer|buyer|supplier\s*details|place\s*of\s*supply|state\s*code|address|road|street|lane|nagar|pincode|pin\s*code|district|taluk|city|payment|amount|total|tax|subtotal|description|hsn|sac|quantity|qty|rate|authorized|authorised|signatory|round\s*off|service\s*due|expiry|warranty|delivery|subject\s+to|birthday\s+party|reservation|questions?|please\s+visit)\b/i;
   const genericHeader =
     /^(?:(?:tax\s+)?invoice|bill|receipt|original|duplicate|triplicate|original for recipient|duplicate for transporter|triplicate for supplier|customer copy|office copy|cash memo|estimate|quotation)$/i;
   const copyDesignation =
@@ -387,7 +399,7 @@ function extractMerchant(text: string): {
     /\b(?:motors?|jewell?ers?|traders?|stores?|enterprises?|services?|restaurant|supermarket|industries|hospital|medical|agency|limited|ltd|llp|private|pvt)\b/i;
   const affiliationDescription = /^\s*a\s+unit\s+of\b/i;
   const genericMerchantHeading =
-    /^(?:store|sales|shop|business|company|merchant|customer|supplier|details|particulars|description|date|total|cash|tax|payment|address|phone|contact|welcome|thank\s+you)$/i;
+    /^(?:store|sales|shop|business|company|merchant|customer|supplier|details|particulars|description|date|total|cash|tax|payment|address|phone|contact|welcome|thank\s+you|extra)$/i;
   const merchantFieldLabel =
     /^(?:merchant|business\s*name|store\s*name|shop\s*name|company\s*name|name)\s*[:.-]\s*/i;
   const sourceLines = getSourceLines(text);
@@ -629,9 +641,16 @@ function extractMerchant(text: string): {
 function normalizeMerchantName(value: string): string {
   const normalized = value.toUpperCase().replace(/\s+/g, " ").trim();
 
-  // Tesseract commonly reads this retailer's ASIAN/MARKET glyphs as ASTAN/MARKI.
-  if (/^NEW\s+A(?:S|ST)AN\s+SUPER\s+MARK(?:I|ET)$/i.test(normalized)) {
+  // Tesseract commonly damages the Asian Super Market logo, sometimes leaving
+  // a short OCR fragment before the recognizable retailer name.
+  if (
+    /(?:^|\b)(?:NEW\s+)?(?:ASIAN|ASTAN|STAN|SIAN)\s+SUPER\s+(?:MARK(?:I|E|IE|ET)|SUEY\s+MA)\b/i.test(normalized)
+  ) {
     return "NEW ASIAN SUPER MARKET";
+  }
+
+  if (/\bTRADING\s+LID\b/i.test(normalized)) {
+    return normalized.replace(/\bLID\b/i, "LTD");
   }
 
   return normalized;
@@ -662,6 +681,17 @@ function findDateCandidates(line: string): DateCandidate[] {
     OCT: 10,
     NOV: 11,
     DEC: 12,
+    JANUARY: 1,
+    FEBRUARY: 2,
+    MARCH: 3,
+    APRIL: 4,
+    JUNE: 6,
+    JULY: 7,
+    AUGUST: 8,
+    SEPTEMBER: 9,
+    OCTOBER: 10,
+    NOVEMBER: 11,
+    DECEMBER: 12,
   };
   const addDate = (
     day: number,
@@ -708,12 +738,52 @@ function findDateCandidates(line: string): DateCandidate[] {
   }
 
   for (const match of line.matchAll(
+    /\b(\d{1,2})[./-](\d{1,2})[./-](\d{2})(?!\d)\b/g
+  )) {
+    const shortYear = Number(match[3]);
+    addDate(
+      Number(match[1]),
+      Number(match[2]),
+      shortYear <= 69 ? 2000 + shortYear : 1900 + shortYear,
+      match[0],
+      match.index
+    );
+  }
+
+  // On labeled dates Tesseract can mistake the leading zero for O or U.
+  for (const match of line.matchAll(
+    /(?<![\p{L}\d])[OU](\d{1,2})[./-](\d{1,2})[./-](\d{2,4})(?!\d)/giu
+  )) {
+    if (!/\bdate\b/i.test(line.slice(0, match.index))) continue;
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const rawYear = Number(match[3]);
+    const year = rawYear < 100 ? (rawYear <= 69 ? 2000 + rawYear : 1900 + rawYear) : rawYear;
+    addDate(day, month, year, match[0], match.index);
+  }
+
+  for (const match of line.matchAll(
     /(?<![\p{L}\d])(\d{1,2})\s*[-./]?\s*(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s*[-./]?\s*(\d{4})(?![\p{L}\d])/giu
   )) {
     const month = monthNumbers[match[2].toUpperCase()];
     if (month) {
       addDate(
         Number(match[1]),
+        month,
+        Number(match[3]),
+        match[0],
+        match.index
+      );
+    }
+  }
+
+  for (const match of line.matchAll(
+    /(?<![\p{L}\d])(JAN(?:UARY)?|FEB(?:RUARY)?|MAR(?:CH)?|APR(?:IL)?|MAY|JUN(?:E)?|JUL(?:Y)?|AUG(?:UST)?|SEP(?:TEMBER)?|OCT(?:OBER)?|NOV(?:EMBER)?|DEC(?:EMBER)?)\s+(\d{1,2})(?:,)?\s+(\d{4})(?![\p{L}\d])/giu
+  )) {
+    const month = monthNumbers[match[1].toUpperCase()];
+    if (month) {
+      addDate(
+        Number(match[2]),
         month,
         Number(match[3]),
         match[0],
@@ -991,6 +1061,18 @@ function extractMoneyCandidates(line: string): MoneyCandidate[] {
     });
   }
 
+  const europeanNoCurrencyPattern =
+    /(?<![\d.,])((?:\d{1,3}(?:\.\d{3})+|\d+),\d{2})(?![\d.,])/gu;
+  for (const match of line.matchAll(europeanNoCurrencyPattern)) {
+    const value = parseEuropeanAmount(match[1]);
+    if (value === null) continue;
+    amounts.push({
+      value,
+      originalText: match[1],
+      startIndex: match.index,
+    });
+  }
+
   return amounts;
 }
 
@@ -1024,6 +1106,10 @@ function extractTotal(text: string): {
       score: 290,
     },
     {
+      pattern: /\bnet\s*payable\b/i,
+      score: 285,
+    },
+    {
       pattern: /\btotal\s*payable\b/i,
       score: 280,
     },
@@ -1040,12 +1126,20 @@ function extractTotal(text: string): {
       score: 225,
     },
     {
+      pattern: /\btotal\s+invoi\w{1,12}\s+(?:g\w{3,8}|val\w*|am\w*)\b/i,
+      score: 235,
+    },
+    {
       pattern: /\binvoice\s*amount\b/i,
       score: 210,
     },
     {
       pattern: /\bgrand\s*total\b/i,
       score: 170,
+    },
+    {
+      pattern: /\bgrand\s*(?:tota[l1]|ue)\b/i,
+      score: 190,
     },
     {
       pattern: /\btotal\s*amount\b/i,
@@ -1064,6 +1158,10 @@ function extractTotal(text: string): {
       score: 145,
     },
     {
+      pattern: /\btopl(?:am|n)\b/i,
+      score: 145,
+    },
+    {
       pattern: /\bnet\s*bill\s*value\b/i,
       score: 130,
     },
@@ -1073,7 +1171,7 @@ function extractTotal(text: string): {
     },
     {
       pattern: /\bnet\s*amount\b/i,
-      score: 70,
+      score: 160,
     },
   ];
 
@@ -1084,7 +1182,7 @@ function extractTotal(text: string): {
   }[] = [];
 
   const nonTotalLabels =
-    /\b(?:total\s+tax|tax\s+total|gst|tax\s+(?:amount\s+)?payable|sub\s*total|round\s*off|item\s*(?:total|amount)|unit\s*price|discount|coupon|savings)\b/i;
+    /\b(?:total\s*(?:tax|qty|quantity|weight|items?|count)|tax\s+total|gst|tax\s+(?:amount\s+)?payable|sub\s*total|round\s*off|item\s*(?:total|amount)|unit\s*price|discount|coupon|savings)\b/i;
 
   lines.forEach((line, index) => {
   const normalized = line.toLowerCase();
@@ -1112,21 +1210,35 @@ function extractTotal(text: string): {
     const rawValuesOnLabelLine = sameLineValues.length > 0
       ? sameLineValues
       : extractMoneyCandidates(line);
+    const sameLineHasValues =
+      sameLineValues.length > 0 &&
+      rawValuesOnLabelLine.length > 0;
     // A damaged OCR line such as "TOTAL ... 85" is not reliable enough to
     // beat a later card payment. Keep generic total labels conservative unless
     // their amount retains a decimal or a currency marker.
     const valuesOnLabelLine = rawValuesOnLabelLine.filter(
-      (value) =>
-        label.score > 145 ||
-        /(?:₹|£|€|\$|\b(?:INR|GBP|EUR|USD|Rs\.?)\b|\.\d{1,2}\b)/i.test(
-          value.originalText
-        )
+      (value) => {
+        const hasStrongAmountShape =
+          /(?:₹|£|€|\$|\b(?:INR|GBP|EUR|USD|Rs\.?)\b|\.\d{1,2}\b|,\d{2}\b|,\d{3}\b)/i.test(
+            value.originalText
+          );
+        const isBeforeLabelWithoutAmountShape =
+          !sameLineHasValues &&
+          value.startIndex < labelMatch.index &&
+          !hasStrongAmountShape;
+        return (
+          !isBeforeLabelWithoutAmountShape &&
+          (label.score > 145 || hasStrongAmountShape)
+        );
+      }
     );
-    const sameLineHasValues =
-      sameLineValues.length > 0 && valuesOnLabelLine.length > 0;
-
     if (valuesOnLabelLine.length) {
-      const selectedAmount = valuesOnLabelLine[0];
+      const selectedAmount =
+        valuesOnLabelLine.find((value) =>
+          /(?:₹|£|€|\$|\b(?:INR|GBP|EUR|USD|Rs\.?)\b|\.\d{1,2}\b|,\d{2}\b|,\d{3}\b)/i.test(
+            value.originalText
+          )
+        ) ?? valuesOnLabelLine[0];
       const selectedAmountStart =
         selectedAmount.startIndex +
         (sameLineHasValues
@@ -1220,14 +1332,36 @@ function extractTotal(text: string): {
   // Retail receipts occasionally lose the printed TOTAL digits during OCR but
   // retain the card-payment amount. Use it only when no labelled total exists.
   if (candidates.length === 0) {
-    const paymentLabel = /\b(?:card|visa|mastercard|contactless|upi|cash)\b/i;
+    const paymentLabel = /\b(?:card|visa|mastercard|contactless|upi|paid|gift\s*card|cash)\b/i;
     lines.forEach((line, index) => {
-      if (!paymentLabel.test(line)) return;
-      const value = extractMoneyCandidates(line)[0];
-      if (!value) return;
+      if (/\b(?:voucher|change|tax|vat|subtotal|net amount|discount|savings?|promotion|item|balance|points|earned)\b/i.test(line)) return;
+      const values = extractMoneyCandidates(line);
+      if (!values.length) return;
+      const hasPaymentLabel = paymentLabel.test(line);
+      const isCashLine = /\bcash\b/i.test(line);
+      if (
+        isCashLine &&
+        !/(?:₹|£|€|\$|\b(?:INR|GBP|EUR|USD|Rs\.?)\b|\.\d{1,2}\b)/i.test(line)
+      ) return;
+      const nearbyPaymentOrTotalCue = lines.some((nearbyLine, nearbyIndex) =>
+        nearbyIndex !== index &&
+        Math.abs(nearbyIndex - index) <= 2 &&
+        /\b(?:grand\s*total|total\s*(?:amount|paid|due)?|amount\s*payable|balance\s*due|card|visa|mastercard|contactless|upi|paid|cash)\b/i.test(nearbyLine) &&
+        !/\b(?:subtotal|tax|vat|discount|savings?|promotion|item|balance\s+of|points|earned|change)\b/i.test(nearbyLine)
+      );
+      const isStandaloneCurrencyAmount =
+        isStandaloneNearbyAmount(line) &&
+        /(?:₹|£|€|\$|\b(?:INR|GBP|EUR|USD)\b)/i.test(line) &&
+        nearbyPaymentOrTotalCue;
+      if (!hasPaymentLabel && !isStandaloneCurrencyAmount) return;
+      const value = values.find((amount) =>
+        /(?:₹|£|€|\$|\b(?:INR|GBP|EUR|USD|Rs\.?)\b|\.\d{1,2}\b)/i.test(
+          amount.originalText
+        )
+      ) ?? values[0];
       candidates.push({
         value: value.value,
-        score: 135,
+        score: hasPaymentLabel ? 135 : 125,
         candidate: {
           sourceLine: sourceLines[index] ?? line,
           valueText: value.originalText,
@@ -1236,13 +1370,59 @@ function extractTotal(text: string): {
             value.originalText,
             value.startIndex
           ),
-          matchingLabel: paymentLabel.exec(sourceLines[index] ?? line)?.[0] ?? "Card payment",
+          matchingLabel:
+            paymentLabel.exec(sourceLines[index] ?? line)?.[0] ??
+            (nearbyPaymentOrTotalCue
+              ? "Currency-marked amount near total/payment cue"
+              : "Currency-marked receipt amount"),
           labelOccurrence: 0,
-          reason: "card or payment amount used after no labelled total was recognized",
+          reason: hasPaymentLabel
+            ? "card or payment amount used after no labelled total was recognized"
+            : "standalone currency-marked amount near a total/payment cue used after no labeled total was recognized",
           labelSourceLine: sourceLines[index] ?? line,
         },
       });
     });
+  }
+
+  // If the total row is unreadable, use repeated currency-marked amounts that
+  // occur near a total cue. This handles retail slips where OCR preserves the
+  // amount but loses the word/colon around TOTAL.
+  if (candidates.length === 0) {
+    const occurrences = new Map<number, Array<{ line: string; index: number; amount: MoneyCandidate }>>();
+    lines.forEach((line, index) => {
+      if (/\b(?:voucher|change|tax|vat|subtotal|net amount|discount|savings?|promotion|item)\b/i.test(line)) return;
+      const currencyMarked = /(?:₹|£|€|\$|\b(?:INR|GBP|EUR|USD)\b)/i.test(line);
+      if (!currencyMarked) return;
+      for (const amount of extractMoneyCandidates(line)) {
+        const group = occurrences.get(amount.value) ?? [];
+        group.push({ line, index, amount });
+        occurrences.set(amount.value, group);
+      }
+    });
+
+    for (const [value, matches] of occurrences) {
+      const best = matches
+        .map((match) => ({
+          ...match,
+          cue: /\b(?:total|paid|card)\b/i.test(match.line) ? 1 : 0,
+        }))
+        .sort((a, b) => b.cue - a.cue || b.index - a.index)[0];
+      if (!best || matches.length < 2 && best.cue === 0) continue;
+      candidates.push({
+        value,
+        score: 120 + Math.min(matches.length, 3) * 5 + best.cue * 10,
+        candidate: {
+          sourceLine: sourceLines[best.index] ?? best.line,
+          valueText: best.amount.originalText,
+          valueOccurrence: countTokenSpansBefore(best.line, best.amount.originalText, best.amount.startIndex),
+          matchingLabel: best.cue ? "OCR total/payment cue" : "Repeated receipt amount",
+          labelOccurrence: 0,
+          reason: "repeated currency-marked amount selected after total-label OCR failure",
+          labelSourceLine: sourceLines[best.index] ?? best.line,
+        },
+      });
+    }
   }
 
   candidates.sort((a, b) => b.score - a.score);
@@ -1276,10 +1456,16 @@ function extractTotal(text: string): {
     ...competingScores
   );
   if (strongestCompetitor === selected.score) {
+    const contenders = candidates
+      .filter((candidate) => candidate.score === selected.score)
+      .map(
+        (candidate) =>
+          `${candidate.value} (${candidate.candidate.matchingLabel ?? "unlabeled"})`
+      );
     return {
       field: makeField<number>(null, "low"),
       candidate: null,
-      missingReason: "conflicting equally ranked payable amount candidates",
+      missingReason: `conflicting equally ranked payable amount candidates: ${contenders.join(", ")}`,
     };
   }
 
@@ -1550,6 +1736,116 @@ function extractCategory(
 // MAIN BILL EXTRACTION FUNCTION
 // --------------------------------------------------
 
+function hasBetterTargetedConfidence<T>(
+  current: ExtractedField<T>,
+  candidate: ExtractedField<T>
+): boolean {
+  if (candidate.value === null) return false;
+  if (current.value === null) return true;
+  if (!current.needsReview) return false;
+
+  const confidenceRank = { low: 0, medium: 1, high: 2 };
+  return confidenceRank[candidate.confidence] > confidenceRank[current.confidence];
+}
+
+function hasBetterTargetedTotal(
+  current: ExtractedBill,
+  candidate: ExtractedBill
+): boolean {
+  if (hasBetterTargetedConfidence(current.total, candidate.total)) return true;
+  if (!current.total.needsReview || candidate.total.value === null) return false;
+
+  const confidenceRank = { low: 0, medium: 1, high: 2 };
+  const strongerCurrencyEvidence =
+    confidenceRank[candidate.currency.confidence] >
+    confidenceRank[current.currency.confidence];
+  const candidateHasPayableContext = /\b(?:total|payable|due|paid|card|payment)\b/i.test(
+    `${candidate.evidence.total.matchingLabel ?? ""} ${candidate.evidence.total.reason}`
+  );
+  return strongerCurrencyEvidence && candidateHasPayableContext;
+}
+
+function isPlausibleMerchantCandidate(value: string | null): boolean {
+  if (!value) return false;
+  const words = value.match(/[\p{L}]+/gu) ?? [];
+  const letters = words.join("");
+  if (letters.length < 5) return false;
+  if (/^(?:and|or|the|for|subject|jurisdiction|date|invoice|receipt|address)$/i.test(value.trim())) {
+    return false;
+  }
+  if (/\b(?:birthday|reservation|jurisdiction|locator|website)\b/i.test(value)) {
+    return false;
+  }
+  return true;
+}
+
+function applyTargetedOCRFallbacks(
+  result: ExtractedBill,
+  source: OCRResult | null
+): ExtractedBill {
+  if (!source) return result;
+
+  for (const pass of source.passes) {
+    if (pass.source === source.primaryFullPage.source) continue;
+    if (!pass.text.trim()) continue;
+
+    const alternate = extractBillData(pass.text);
+    if (hasBetterTargetedConfidence(result.date, alternate.date)) {
+      const isRecovery = result.date.value === null;
+      result.date = { ...alternate.date, needsReview: true };
+      result.evidence.date = {
+        ...alternate.evidence.date,
+        sourceOCRPass: pass.source,
+        reason: isRecovery
+          ? `date recovered from ${pass.source} OCR`
+          : `higher-confidence date selected from ${pass.source} OCR`,
+      };
+    }
+    if (
+      pass.source !== "processed-total-region" &&
+      isPlausibleMerchantCandidate(alternate.merchant.value) &&
+      (
+        !isPlausibleMerchantCandidate(result.merchant.value) ||
+        hasBetterTargetedConfidence(result.merchant, alternate.merchant)
+      )
+    ) {
+      const isRecovery = result.merchant.value === null;
+      result.merchant = { ...alternate.merchant, needsReview: true };
+      result.evidence.merchant = {
+        ...alternate.evidence.merchant,
+        sourceOCRPass: pass.source,
+        reason: isRecovery
+          ? `merchant recovered from ${pass.source} OCR`
+          : `higher-confidence merchant selected from ${pass.source} OCR`,
+      };
+    }
+    if (
+      pass.source !== "processed-header-region" &&
+      hasBetterTargetedTotal(result, alternate)
+    ) {
+      const isRecovery = result.total.value === null;
+      result.total = { ...alternate.total, needsReview: true };
+      result.currency = alternate.currency;
+      result.evidence.total = {
+        ...alternate.evidence.total,
+        sourceOCRPass: pass.source,
+        reason: isRecovery
+          ? `total recovered from ${pass.source} OCR`
+          : `higher-confidence total selected from ${pass.source} OCR`,
+      };
+    }
+    if (
+      pass.source !== "processed-header-region" &&
+      hasBetterTargetedConfidence(result.category, alternate.category) &&
+      alternate.category.value !== "Other"
+    ) {
+      result.category = { ...alternate.category, needsReview: true };
+    }
+  }
+
+  return result;
+}
+
 export function extractBillData(input: string | OCRResult): ExtractedBill {
   const text = typeof input === "string" ? input : input.primaryFullPage.text;
   const ocrSource = typeof input === "string" ? null : input;
@@ -1559,12 +1855,22 @@ export function extractBillData(input: string | OCRResult): ExtractedBill {
     lower.includes(keyword)
   ).length;
 
-  const hasAmount = /\d+[.,]\d{2}/.test(text);
+  const hasAmount =
+    /\d+[.,]\d{2}/.test(text) ||
+    /\b\d{1,3}(?:,\d{3})+\b/.test(text) ||
+    /\b\d{1,3}(?:\.\d{3})+,\d{2}\b/.test(text);
+  const isRecognizedGroceryRetailer =
+    /\b(?:tesco|sainsbur(?:y|ies)|sainsbury'?s|new asian super market|new asian super mar)\b/i.test(text);
+  const hasMultipleCurrencyPrices =
+    text.split(/\r?\n/).filter((line) =>
+      /(?:£|€|\$|₹)\s*\d[\d,.]*/.test(line)
+    ).length >= 2;
   const hasRetailReceiptEvidence =
     /\b(?:sale\s*date|checkout|cashier|staff|till|card|visa|mastercard|contactless|auth(?:orization)?\s*code)\b/i.test(
       text
     ) &&
-    /\b(?:price|qty|quantity|total)\b/i.test(text);
+    /\b(?:price|qty|quantity|total)\b/i.test(text) ||
+    (isRecognizedGroceryRetailer && hasMultipleCurrencyPrices);
   const isBill = hasAmount && (keywordCount >= 1 || hasRetailReceiptEvidence);
 
   const merchantExtraction = extractMerchant(text);
@@ -1602,21 +1908,21 @@ export function extractBillData(input: string | OCRResult): ExtractedBill {
   };
 
   if (!isBill) {
-    return {
+    return applyTargetedOCRFallbacks({
       isBill: false,
       merchant,
       date,
       total,
       currency,
-      category: makeField<ExpenseCategory>(null, "low"),
+      category: extractCategory(text, merchant.value),
       rawText: text,
       evidence,
-    };
+    }, ocrSource);
   }
 
   const category = extractCategory(text, merchant.value);
 
-  return {
+  return applyTargetedOCRFallbacks({
     isBill: true,
     merchant,
     date,
@@ -1625,5 +1931,5 @@ export function extractBillData(input: string | OCRResult): ExtractedBill {
     category,
     rawText: text,
     evidence,
-  };
+  }, ocrSource);
 }

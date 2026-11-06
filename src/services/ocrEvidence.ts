@@ -2,7 +2,8 @@ export type OCRPassSource =
   | "processed-full"
   | "original-full"
   | "grayscale-contrast-full"
-  | "processed-header-region";
+  | "processed-header-region"
+  | "processed-total-region";
 
 export interface OCRRegion {
   left: number;

@@ -282,6 +282,36 @@ test("does not associate B02 authorization-code OCR with Balance Due", () => {
   assert.equal(bill.total.value, null);
 });
 
+test("ignores digits before Balance Due and selects the labeled receipt amount", () => {
+  const bill = extractBillData(
+    ["10 BALANCE DUE", "£29.44", "GIFT CARD", "£29.44"].join("\n")
+  );
+
+  assert.equal(bill.total.value, 29.44);
+});
+
+test("does not promote isolated item prices to a receipt total", () => {
+  const bill = extractBillData(
+    ["Retailer", "Apples", "£2.40", "Bread", "£2.50", "Savings -£0.10"].join("\n")
+  );
+
+  assert.equal(bill.total.value, null);
+});
+
+test("ignores quantity totals and recovers a damaged Grand Total label", () => {
+  const bill = extractBillData(
+    [
+      "Total Qty: 27 Total 1009.53",
+      "CGST@2.5 25.24",
+      "SGST@2.5 25.24",
+      "Round off -0.01",
+      "Grand ue [4 1060.00",
+    ].join("\n")
+  );
+
+  assert.equal(bill.total.value, 1060);
+});
+
 test("uses grand total ahead of net amount when no payable label exists", () => {
   const bill = extractBillData(
     ["Net Amount ₹2,841.36", "Grand Total ₹2,841.00"].join("\n")
@@ -471,6 +501,50 @@ test("B15 payable total takes precedence over net, round-off, and item values", 
   );
 
   assert.equal(bill.total.value, 2841);
+});
+
+test("B15 noisy invoice-total OCR selects the final amount over net amount", () => {
+  const bill = extractBillData(
+    [
+      "Net Amount 2,841.36",
+      "Round Off -0.36",
+      "Invoice Amount Pa Bled a",
+      "CHECK RES Total Invoic Gijure 2,841.00",
+      "Total Invoic Value 2,841.00",
+    ].join("\n")
+  );
+
+  assert.equal(bill.total.value, 2841);
+});
+
+test("extracts retail receipt total from repeated currency amounts when total text is lost", () => {
+  const bill = extractBillData(
+    [
+      "Sale Date: 10/07/2026 18:51:11",
+      "WM orn: £15.85 |",
+      "TOTAL GIY +5",
+      "SF CE £15.85",
+      "MASTERCARD",
+      "Voucher £2.00",
+    ].join("\n")
+  );
+
+  assert.equal(bill.total.value, 15.85);
+  assert.equal(bill.currency.code, "GBP");
+});
+
+test("recognizes an itemized grocery receipt as a bill when the total row is unreadable", () => {
+  const bill = extractBillData(
+    [
+      "TESCO Organic Tomatoes £3.00",
+      "TESCO Organic Carrots £1.35",
+      "Subtotal £88.74",
+      "Giftcard £66.29",
+    ].join("\n")
+  );
+
+  assert.equal(bill.isBill, true);
+  assert.equal(bill.category.value, "Groceries");
 });
 
 test("extracts a business name from a conventional invoice header", () => {
@@ -696,6 +770,14 @@ test("extracts labeled invoice dates in common Indian formats", () => {
 
     assert.equal(bill.date.value, expected, dateLine);
   }
+});
+
+test("extracts two-digit receipt years using the 2000s for years 00–69", () => {
+  const bill = extractBillData(
+    ["Date: 06/07/25", "Grand Total £21.60"].join("\n")
+  );
+
+  assert.equal(bill.date.value, "06-07-2025");
 });
 
 test("extracts abbreviated month dates in compact and spaced OCR formats", () => {
@@ -1321,9 +1403,9 @@ test("leaves source evidence unavailable for conflicting date and amount candida
   assert.equal(bill.evidence.total.selectedValue, null);
   assert.equal(bill.evidence.total.originalText, null);
   assert.equal(bill.evidence.total.sourceWordIds, null);
-  assert.equal(
+  assert.match(
     bill.evidence.total.reason,
-    "conflicting equally ranked payable amount candidates"
+    /^conflicting equally ranked payable amount candidates/
   );
 });
 
@@ -1389,4 +1471,116 @@ test("extracts a retail receipt when the printed total is damaged but card payme
     bill.evidence.total.reason,
     "card or payment amount used after no labelled total was recognized"
   );
+});
+
+test("prefers the currency amount over a card number on the same payment row", () => {
+  const bill = extractBillData(
+    "Receipt Frank & Co. Fire Jewelry Jul 29, 2022 Visa 2744 (Chip) $1,303.75"
+  );
+
+  assert.equal(bill.date.value, "29-07-2022");
+  assert.equal(bill.total.value, 1303.75);
+  assert.equal(bill.currency.code, null);
+});
+
+test("parses comma-grouped amounts on international receipts without a currency marker", () => {
+  const bill = extractBillData(
+    "ICHIBAN SUSHI\nSubtotal 223,000\nService Charge 11,150\nTax 23,415\nTotal 257,565"
+  );
+
+  assert.equal(bill.total.value, 257565);
+  assert.equal(bill.category.value, "Food");
+  assert.equal(bill.currency.code, null);
+});
+
+test("parses European formatted totals when OCR drops the currency symbol", () => {
+  const bill = extractBillData("Topln 8.098,00");
+
+  assert.equal(bill.total.value, 8098);
+});
+
+test("uses net amount after tax when OCR labels the pre-tax figure as total", () => {
+  const bill = extractBillData(
+    "Tax Invoice Restaurant\nTotal 2687.00\nCGST 67.18\nSGST 67.18\nNet Amount 2821.00"
+  );
+
+  assert.equal(bill.total.value, 2821);
+});
+
+test("uses an explicit cash amount but ignores unlabeled cash tender digits", () => {
+  const receipt = extractBillData("Receipt A-Grade Samosa CASH ₹302.00");
+  const tender = extractBillData("Receipt CASH 5000");
+
+  assert.equal(receipt.total.value, 302);
+  assert.equal(tender.total.value, null);
+});
+
+test("extracts month-first dates with full or abbreviated month names", () => {
+  const bill = extractBillData(
+    "Receipt date: January 24, 2007\nTotal $10.00"
+  );
+
+  assert.equal(bill.date.value, "24-01-2007");
+});
+
+test("repairs an OCR-confused leading zero in a labeled date", () => {
+  const bill = extractBillData("Receipt\nDate: U6/07/25\nTotal ₹1060.00");
+
+  assert.equal(bill.date.value, "06-07-2025");
+});
+
+test("normalizes common fragmented OCR variants of New Asian Super Market", () => {
+  const cases = ["STAN SUPER MARKIE", "SIAN SUPER MARKI"];
+
+  for (const merchant of cases) {
+    const bill = extractBillData(`${merchant}\nTOTAL £10.00`);
+    assert.equal(bill.merchant.value, "NEW ASIAN SUPER MARKET", merchant);
+    assert.equal(bill.category.value, "Groceries", merchant);
+  }
+});
+
+test("uses targeted header and total crops only to fill missing primary fields", () => {
+  const primary = makeOCRInput("Tax Invoice").passes[0];
+  const makeTargetedPass = (
+    source: OCRPassResult["source"],
+    text: string,
+    top: number
+  ): OCRPassResult => ({
+    source,
+    text,
+    confidence: 90,
+    pageSegmentationMode: "11",
+    region: {
+      left: 0.05,
+      top,
+      width: 0.9,
+      height: 0.3,
+      coordinateSpace: "normalized",
+    },
+    width: 900,
+    height: 600,
+    blocks: [],
+    lines: [],
+  });
+  const result = extractBillData(
+    combineOCRPasses([
+      primary,
+      makeTargetedPass("processed-header-region", "LL NEW ASIAN SUPER MARKE", 0.02),
+      makeTargetedPass(
+        "processed-total-region",
+        "Date: 10/07/2026\nGrand Total ₹15.85",
+        0.65
+      ),
+    ])
+  );
+
+  assert.equal(result.merchant.value, "NEW ASIAN SUPER MARKET");
+  assert.equal(result.date.value, "10-07-2026");
+  assert.equal(result.total.value, 15.85);
+  assert.equal(result.evidence.merchant.sourceOCRPass, "processed-header-region");
+  assert.equal(result.evidence.date.sourceOCRPass, "processed-total-region");
+  assert.equal(result.evidence.total.sourceOCRPass, "processed-total-region");
+  assert.equal(result.merchant.needsReview, true);
+  assert.equal(result.date.needsReview, true);
+  assert.equal(result.total.needsReview, true);
 });

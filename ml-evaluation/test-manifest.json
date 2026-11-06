@@ -1,0 +1,278 @@
+{
+  "images": {
+    "bills/B1.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": [
+          "Vernon Fox Trading Ltd",
+          "Vernon Fox",
+          "Vernon Fox Trading Ltd (Ipswich)"
+        ],
+        "total": 27.5,
+        "category": "Shopping"
+      }
+    },
+    "bills/B2.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Sainsbury's",
+        "date": "26-06-2026",
+        "total": 29.44,
+        "category": "Groceries"
+      }
+    },
+    "bills/B3.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "New Asian Super Market",
+        "date": "28-09-2026",
+        "total": 40.38,
+        "category": "Groceries"
+      }
+    },
+    "bills/B4.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Tesco",
+        "date": "19-10-2026",
+        "total": 18.98,
+        "category": "Groceries"
+      }
+    },
+    "bills/B5.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "New Asian Super Market",
+        "date": "10-07-2026",
+        "total": 15.85,
+        "category": "Groceries"
+      }
+    },
+    "bills/B6.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Choice Fashion & Home Outlet",
+        "date": "01-10-2026",
+        "total": 13.5,
+        "category": "Shopping"
+      }
+    },
+    "bills/B7.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Sainsbury's",
+        "date": "03-11-2026",
+        "total": 12.2,
+        "category": "Groceries"
+      }
+    },
+    "bills/B8.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "New Asian Super Market",
+        "date": "08-10-2026",
+        "total": 66.26,
+        "category": "Groceries"
+      }
+    },
+    "bills/B9.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "New Asian Super Market",
+        "date": "20-07-2026",
+        "total": 63.93,
+        "category": "Groceries"
+      }
+    },
+    "bills/B10.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Tesco",
+        "date": "15-08-2026",
+        "total": 49.01,
+        "category": "Groceries"
+      }
+    },
+    "bills/B11.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Tesco",
+        "date": "06-10-2026",
+        "total": 66.29,
+        "category": "Groceries"
+      }
+    },
+    "bills/B12.jpg": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Sakala Jewellery House",
+        "date": "06-06-2026",
+        "total": 16800,
+        "category": "Shopping"
+      }
+    },
+    "bills/B13.jpg": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Sri Rajalakshmi Silvermine",
+        "date": "06-06-2026",
+        "total": 7880,
+        "category": "Shopping"
+      }
+    },
+    "bills/B14.jpg": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "GET Electronics",
+        "date": "03-05-2026",
+        "total": 14000,
+        "category": "Shopping"
+      }
+    },
+    "bills/B15.jpg": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Nidhi Motors",
+        "date": "05-11-2026",
+        "total": 2841,
+        "category": "Transport"
+      }
+    },
+    "B16.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Frank & Co. Fire Jewelry",
+        "date": "29-07-2022",
+        "total": 1303.75,
+        "category": "Shopping"
+      }
+    },
+    "B17.JPG": {
+      "expectedClass": "not_bill",
+      "note": "Jewelry replacement valuation, not proof of a purchase."
+    },
+    "B18.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Ichiban Sushi",
+        "date": "19-08-2024",
+        "total": 257565,
+        "category": "Food"
+      }
+    },
+    "B19.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Starbucks",
+        "date": "04-06-2026",
+        "total": 3450,
+        "category": "Food"
+      }
+    },
+    "B20.jpeg": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Femina Gold Palace",
+        "date": "02-10-2023",
+        "total": 94000,
+        "category": "Shopping"
+      }
+    },
+    "B21.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Sharma Restaurant",
+        "date": "06-07-2025",
+        "total": 1060,
+        "category": "Food"
+      }
+    },
+    "B22.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "A-Grade Samosa",
+        "date": "16-04-2026",
+        "total": 302,
+        "category": "Food"
+      }
+    },
+    "B23.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Brahmins Thatte Idli",
+        "date": "21-04-2026",
+        "total": 550,
+        "category": "Food"
+      }
+    },
+    "B24.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Zaika Family Restaurant",
+        "date": "26-09-2025",
+        "total": 1050,
+        "category": "Food"
+      }
+    },
+    "B25.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Manas Family Resto & Lounge",
+        "date": "22-06-2026",
+        "total": 2821,
+        "category": "Food"
+      }
+    },
+    "B26.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Aavkar",
+        "date": "12-06-2023",
+        "total": 700,
+        "category": "Groceries"
+      }
+    },
+    "B27.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "The Sunday House",
+        "date": "27-12-2025",
+        "total": 2015,
+        "category": "Food"
+      }
+    },
+    "B28.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Lulu Lounge",
+        "date": "05-11-2023",
+        "total": 8098,
+        "category": "Food"
+      }
+    },
+    "B29.JPG": {
+      "expectedClass": "bill",
+      "expectedFields": {
+        "merchant": "Nusr-Et Miami",
+        "date": "16-10-2019",
+        "total": 6228.05,
+        "category": "Food"
+      }
+    },
+    "non-bills/NB1.JPG": {
+      "expectedClass": "not_bill"
+    },
+    "non-bills/NB2.jpg": {
+      "expectedClass": "not_bill"
+    },
+    "non-bills/NB3.jpg": {
+      "expectedClass": "not_bill"
+    },
+    "non-bills/NB4.jpg": {
+      "expectedClass": "not_bill"
+    },
+    "non-bills/NB5.jpg": {
+      "expectedClass": "not_bill"
+    }
+  }
+}

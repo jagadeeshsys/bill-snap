@@ -1,0 +1,2379 @@
+{
+  "createdAt": "2026-11-06T15:43:21.733Z",
+  "commit": "3836b68ee3f48fccda7682e99efd05579cb57a41",
+  "workingTreeDirty": true,
+  "imageCount": 34,
+  "note": "Raw source-image Tesseract diagnostic. See the generated report for methodology and field scoring.",
+  "classificationMetrics": {
+    "correct": 30,
+    "total": 34,
+    "counts": {
+      "bill:bill": 26,
+      "not_bill:not_bill": 4,
+      "bill:uncertain": 2,
+      "not_bill:uncertain": 2
+    }
+  },
+  "fieldMetrics": {
+    "merchant": {
+      "correct": 7,
+      "evaluated": 28
+    },
+    "date": {
+      "correct": 16,
+      "evaluated": 27
+    },
+    "total": {
+      "correct": 15,
+      "evaluated": 28
+    },
+    "category": {
+      "correct": 25,
+      "evaluated": 28
+    }
+  },
+  "results": [
+    {
+      "image": "B16.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "Frank & Co. Fire Jewelry",
+        "date": "29-07-2022",
+        "total": 1303.75,
+        "category": "Shopping"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Frank & Co. Fire Jewelry",
+          "actual": "WL NEA A RPE AY",
+          "correct": false
+        },
+        "date": {
+          "expected": "29-07-2022",
+          "actual": "29-07-2022",
+          "correct": true
+        },
+        "total": {
+          "expected": 1303.75,
+          "actual": 1303.75,
+          "correct": true
+        },
+        "category": {
+          "expected": "Shopping",
+          "actual": "Shopping",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Invoice, bill, or receipt header detected.",
+        "Merchant or business identity detected.",
+        "Currency amount detected.",
+        "Tax, GST, or payment detail detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 48,
+      "merchant": {
+        "value": "WL NEA A RPE AY",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": "29-07-2022",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "total": {
+        "value": 1303.75,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": 1303.75,
+        "normalizedAmount": 1303.75,
+        "code": null,
+        "originalText": "$1,303.75",
+        "confidence": "low",
+        "normalization": "certain",
+        "normalizationReason": "distinct thousands and decimal separators",
+        "reason": "bare dollar symbol is ambiguous between currencies"
+      },
+      "category": {
+        "value": "Shopping",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "rawText": "8 Sore USE LER EERG LE, 4 Vall Ve\nge 0 RT al Cp Ml\nFo r bb \" Bee on 5 iy we Er - “\nWL Nea a RPE Ay »\nwl ® A “hii. @ 5 pe 4 Py\nwe - -\n. wa\ni - 1 yo LP\nSE Frank & Co. Firg Jewelry + gy”\n. { q A\nA a. i | 25814 Canal Road #7 | Jul 29, 2022 )\n{ ow Orange Beach, AL 36661 4:41 PM ;\nJ (261) 970-2060 : gevelyn 2\nHy Bi Tl Authorization: 04329D Go : A\n5 g § Receipt: L12R Fo\n- <A ¥ 4 —_— &.\nTF a CAPITAL ONE VISA i.”\nAID AO 00 00 00 0310 10 £\n! X 9 | WEEE Wee auy CE i % ®\noS hs wr Custom - Variable x 1 $912.50 Pa\na Labor on custom items. x 1 $300.00\na \\ YY CEE EN {Whe SE L\nwe LY B. Subtotal $1,212.50 . :\nAt Sales Tax $91.25 )\nBer $0.00\n8 ENT? : ;\n- ad iia - : 5 »\nLAE Visa 2744 (Chip) i $1,303.75\n_ “BE Debra Whitmore\n£ >\nav. Thank you so much!\na AE : Return Policy: Select purchases made over 10 :\nbo | 3 business days aré eligible for store credit or\noR Te ” exchanges only. Repall custom work, “as is\"\nor sale merchandise 18 N°t eligible for exchange\nae or store credit.\nA\non AE :\n£58\n"
+    },
+    {
+      "image": "B17.JPG",
+      "expectedClass": "not_bill",
+      "predictedClass": "not_bill",
+      "classificationCorrect": true,
+      "expectedFields": {},
+      "fieldEvaluation": {},
+      "groundTruthNote": "Jewelry replacement valuation, not proof of a purchase.",
+      "classificationReasons": [
+        "Merchant or business identity detected.",
+        "Item or service line details detected.",
+        "Currency amount detected.",
+        "Final total or payable label detected.",
+        "Valuation document detected without proof of purchase.",
+        "No purchase or payment evidence was detected."
+      ],
+      "ocrConfidence": 79,
+      "merchant": {
+        "value": "RUBIN BROTHERS OF GEORGIA INC",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": "24-01-2007",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "total": {
+        "value": 7138.45,
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": 7138.45,
+        "normalizedAmount": 7138.45,
+        "code": null,
+        "originalText": "$ 7,138.45",
+        "confidence": "low",
+        "normalization": "certain",
+        "normalizationReason": "distinct thousands and decimal separators",
+        "reason": "bare dollar symbol is ambiguous between currencies"
+      },
+      "category": {
+        "value": "Shopping",
+        "confidence": "high",
+        "needsReview": false
+      },
+      "rawText": "RUBIN BROTHERS OF GEORGIA, INC\n; Diamond and Jewelry Wholesalers\n1 7601 North Point Parkway, Suite #200-A\ni Alpharetta, GA 30022\n: (770) 998-6001\n4 Date: January 24, 2007\nA Jewelry) Diamond Stud\nTi Description:\nDiamond)\nFa Shape/Cut: Princess Cut\n— Quantity: 1\nEe\nww Weight: 1.23 ct\ngE\nae Color: J\nE fuss\n| esas LT = 5 Clarity: VS2\n1 > Symmetry: Very Good\n| Polish: Very Good =\n| Culet: None\n{ Additional: EGL certificate number 2654892541.\nA photocopy of the certificate is attached to this\ndocument.\n| Comments: Diamond was matched for studs\nMount(s): 14k white gold 4-prong basket style earring mount.\nReplacement Value $ 6,235.00\nSubtotal: $ 6,235.00\nTax (7%): $ 436.45\nTotal Replacement Value: $ 7,138.45\n3\n"
+    },
+    {
+      "image": "B18.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "Ichiban Sushi",
+        "date": "19-08-2024",
+        "total": 257565,
+        "category": "Food"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Ichiban Sushi",
+          "actual": "ICHIBAN SUSHI",
+          "correct": true
+        },
+        "date": {
+          "expected": "19-08-2024",
+          "actual": null,
+          "correct": false
+        },
+        "total": {
+          "expected": 257565,
+          "actual": 257565,
+          "correct": true
+        },
+        "category": {
+          "expected": "Food",
+          "actual": "Food",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Merchant or business identity detected.",
+        "Currency amount detected.",
+        "Final total or payable label detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 60,
+      "merchant": {
+        "value": "ICHIBAN SUSHI",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "total": {
+        "value": 257565,
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": 257565,
+        "normalizedAmount": null,
+        "code": null,
+        "originalText": "257,565",
+        "confidence": "low",
+        "normalization": "ambiguous",
+        "normalizationReason": "three trailing digits could be decimal or thousands grouping",
+        "reason": "no reliable currency indicator on the selected payable candidate"
+      },
+      "category": {
+        "value": "Food",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "rawText": "ICHIBAN SUSHI\nAEON SENTUL CITY\nBOGOR\nraster Cashier: RIVAN MAULANA Pe\nAu Server: RIVAN MAULANA\nFar 2g 6:32:54 PM PAX: 2\nCC EEETTeaEaaa\n1 Sapporo Garlic Sesame Rame (DITA 39,000\nnN Bl 1 Katsu Roll 35,000\n\\ BN | Salmon sakura 35,000\nBR 1 Spicy Creany Namazu Roll 35.000 -»\nLx = 1 Black Current 1L 37.000\nBN Total Iten : 6 Total ty ; 6 1\nSubtotal 223,000\nService aro 1150\nTax Resto 1 1415\nTotal 257,565\ned ug 19, AA TRIP\nAh \"A 2 hers eS\n% Fadi TY d Please Come Again\nF | Thark ded Care Please ;\np le hel logichibansushi.co. id\nEmai “Fb: Tchibansushi_ID\n(#ter: eichibansusniID\nTw at jchibansushi_ID\nNob. og fchipansushi 0. 1d\n"
+    },
+    {
+      "image": "B19.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "uncertain",
+      "classificationCorrect": false,
+      "expectedFields": {
+        "merchant": "Starbucks",
+        "date": "04-06-2026",
+        "total": 3450,
+        "category": "Food"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Starbucks",
+          "actual": "AN RANE TINY",
+          "correct": false
+        },
+        "date": {
+          "expected": "04-06-2026",
+          "actual": null,
+          "correct": false
+        },
+        "total": {
+          "expected": 3450,
+          "actual": null,
+          "correct": false
+        },
+        "category": {
+          "expected": "Food",
+          "actual": "Other",
+          "correct": false
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Currency amount detected.",
+        "Tax, GST, or payment detail detected.",
+        "OCR evidence is insufficient to classify confidently."
+      ],
+      "ocrConfidence": 40,
+      "merchant": {
+        "value": "AN RANE TINY",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "total": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": null,
+        "normalizedAmount": null,
+        "code": null,
+        "originalText": null,
+        "confidence": "low",
+        "normalization": "unavailable",
+        "normalizationReason": "no selected payable amount",
+        "reason": "currency cannot be detected without a selected payable candidate"
+      },
+      "category": {
+        "value": "Other",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "rawText": "AN RANE TINY\nAWN WY A \\ A AWN MANN Rann it\nARN LORN AA LAIR\nNNN\n\\\\ NO LUA AN PUNINERRSS p \\ WN \\ AN NY \\\n\\ AN WN \\\\ \\ NAN NN \\ \\ \\ NN\nA AMMAN\np> \\ QA LARRY\n4 fee AN ANN NA\n£5 NL) \\ Q\n2 4 AON \\\\ NL A ON \\\ncar End Vro4 W \\ NAR \\\\\ngot WW i. IN \\ AN \\ AN NWN AN\nHAN EA NANEN S\\N NO\nond 0AI06/ 2% NR) NN AN \\ \\ \\\\\n- / 1,000.0 WARY \\ \\ \\ )\n\"7 O00 (ENR NANNY \\\nBi TRE A) \\ AN NN\n| Sie Tree TR ANARNR\n20% ; i T \\ ND \\ VALI\nA grnd 2d acai ® 000. MAN A NA \\\nos A NNN\neT Tar y AN BV ERR) NN\nnotusive ® 609 (RNA NN A\nee Ae\neect, CRA\nro GO rota’ i DR NR\nusp 140: 45,00 A \\ WNW \\ A\nLAR \\\n5 p s\\8) AN \\ \\\nCASH 0) 520 S01 ANN \\ \\\ncnan9® 7 AN W\nusp 140: © NAN\ncup ORR\nwith gvery Varin, BRAN\nwith evel) gore! iy A1ies AN\neo EEN\nBR ==\" MANN A \\N\n\\ \\: NY WA \\ \\\n"
+    },
+    {
+      "image": "B20.jpeg",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "Femina Gold Palace",
+        "date": "02-10-2023",
+        "total": 94000,
+        "category": "Shopping"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Femina Gold Palace",
+          "actual": "FEMINA.....",
+          "correct": false
+        },
+        "date": {
+          "expected": "02-10-2023",
+          "actual": null,
+          "correct": false
+        },
+        "total": {
+          "expected": 94000,
+          "actual": null,
+          "correct": false
+        },
+        "category": {
+          "expected": "Shopping",
+          "actual": "Shopping",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Invoice, bill, or receipt header detected.",
+        "Item or service line details detected.",
+        "Currency amount detected.",
+        "Tax, GST, or payment detail detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 54,
+      "merchant": {
+        "value": "FEMINA.....",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "total": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": null,
+        "normalizedAmount": null,
+        "code": null,
+        "originalText": null,
+        "confidence": "low",
+        "normalization": "unavailable",
+        "normalizationReason": "no selected payable amount",
+        "reason": "currency cannot be detected without a selected payable candidate"
+      },
+      "category": {
+        "value": "Shopping",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "rawText": "Subject o Thane Jurisdiction Fa\nET er ons somes\nTAX INVOICE (GOLD)\n3\nFEMINA.....\n— — Gold Palace\nA/11/Shop No. 1 & 2, Sector 4, Shanti Nagar, Noar Jain Mand, Mira Road (€), Dist. Thane - 401 107;\nURD GOLD PURCHASE INVOICE\nromero\nSw\n[omc Tove | om Jom see | |\nCHAN Tn | ow Tasso | 1asso | 9400000\nLADIES BRASLATE ne | 7 arm arm pe\n; tea | 19320\nCoe\nTR SS — — ou\nCertified that the Particulars given above ar rue and correc and the amount indicated = ie\nToe ie sod Gos (Ga Ores Ys re nd 1 om sok 7] |\nThe shor sad Cox For, FEMINA GOLP| PALACE,\n2 To shove cid Goods (Gd Omames) voce have been ls for which am 7\ninal prsent 3 |\n2 ocoved tf ake athe above $9 Goods (Gold Omaments\nLo 2\nThank You! ge\nCustomer Sen. Stop Tims 1030am to 930pm ONOAY CLOSED\n:\na YR ;\n"
+    },
+    {
+      "image": "B21.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "Sharma Restaurant",
+        "date": "06-07-2025",
+        "total": 1060,
+        "category": "Food"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Sharma Restaurant",
+          "actual": "SHARMA RESTAURANT",
+          "correct": true
+        },
+        "date": {
+          "expected": "06-07-2025",
+          "actual": "06-07-2025",
+          "correct": true
+        },
+        "total": {
+          "expected": 1060,
+          "actual": 21060,
+          "correct": false
+        },
+        "category": {
+          "expected": "Food",
+          "actual": "Food",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Invoice, bill, or receipt header detected.",
+        "Merchant or business identity detected.",
+        "Item or service line details detected.",
+        "Currency amount detected.",
+        "Final total or payable label detected.",
+        "Tax, GST, or payment detail detected.",
+        "Bill number, transaction date, and multiple amounts detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 56,
+      "merchant": {
+        "value": "SHARMA RESTAURANT",
+        "confidence": "high",
+        "needsReview": false
+      },
+      "date": {
+        "value": "06-07-2025",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "total": {
+        "value": 21060,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": 21060,
+        "normalizedAmount": 21060,
+        "code": null,
+        "originalText": "21060.00",
+        "confidence": "low",
+        "normalization": "certain",
+        "normalizationReason": "one or two trailing digits indicate decimal precision",
+        "reason": "no reliable currency indicator on the selected payable candidate"
+      },
+      "category": {
+        "value": "Food",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "rawText": "SHARMA RESTAURANT =\n65-1-117 1st Floor, Opp Vegetable ©\nMarket, Shriharipuram 530011\nL GST IN: 37ENTPS1939F12ZL\nBENE AWN SN TT cel\nName:\na CREE TR ehh BTR\nDate: 06/07/25 Dineln: C1 A |\nCashier: biller = Bill No.: 30\ni\n| Item Qty. Price Amo Us \\\nSev Tomato 1170.43 171.43 |\n(Full) } x R{ \\, |\nanlanner § 1 219.05 219,05 ||\n~~ Masgroom (Fall) f\nVeg Raita (Full) 1 76.19 76419\n\"Ny Eo Koftak Full) 1 228.57 218.57\nawe Ghee Roti 12° 11.43 137.14\n\"Butter Naan 2 33.33 66.67\nButter Milk 1 19.05 \"119.05 &\nTawa Ghee Roti ' 8 11.43 81.43\nEE ————————— TT — ———\nSub\nTotal Qty’ 27 yopp 1909.53\nCGST@2.5 2.5% 25,24\n§GST@2.5 2.5% 25.24\n—— ee ———\nRounc off -0.01\nGrand Total 21060.00\nPaic viz Other furl] ;\n"
+    },
+    {
+      "image": "B22.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "A-Grade Samosa",
+        "date": "16-04-2026",
+        "total": 302,
+        "category": "Food"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "A-Grade Samosa",
+          "actual": "SE TAY TNUOTCE",
+          "correct": false
+        },
+        "date": {
+          "expected": "16-04-2026",
+          "actual": "16-04-2026",
+          "correct": true
+        },
+        "total": {
+          "expected": 302,
+          "actual": null,
+          "correct": false
+        },
+        "category": {
+          "expected": "Food",
+          "actual": "Food",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Invoice, bill, or receipt header detected.",
+        "Item or service line details detected.",
+        "Currency amount detected.",
+        "Tax, GST, or payment detail detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 45,
+      "merchant": {
+        "value": "SE TAY TNUOTCE",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": "16-04-2026",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "total": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": null,
+        "normalizedAmount": null,
+        "code": null,
+        "originalText": null,
+        "confidence": "low",
+        "normalization": "unavailable",
+        "normalizationReason": "no selected payable amount",
+        "reason": "currency cannot be detected without a selected payable candidate"
+      },
+      "category": {
+        "value": "Food",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "rawText": "N\n—- A-GRADE Sanosg\neST.NO 27ARAPH2B4K1Z]\nTe STON-H\nES GAT NO 1522003000034\n; SE TAY TNUOTCE\nEE —  - .CASH/BILL----...\nWR THBLE 0000 CUR 01 WAITER (0\nNO.002111 DATE:- 16-04-2026\ngescRipiion OY RATE AMOLNT\nsain Lo 0 sa\nCARL CHS DISEH 1.00 55.00 55.00\nALLL SAMOSA 6.00 18.00 108.00\nLASS 1.00 89.00 85.0\ncoe 302 00\nCg 16:11:00 WC ND\n"
+    },
+    {
+      "image": "B23.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "Brahmins Thatte Idli",
+        "date": "21-04-2026",
+        "total": 550,
+        "category": "Food"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Brahmins Thatte Idli",
+          "actual": "BRAHMINS THATTE IDLI-",
+          "correct": true
+        },
+        "date": {
+          "expected": "21-04-2026",
+          "actual": "21-04-2026",
+          "correct": true
+        },
+        "total": {
+          "expected": 550,
+          "actual": 550,
+          "correct": true
+        },
+        "category": {
+          "expected": "Food",
+          "actual": "Food",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Invoice, bill, or receipt header detected.",
+        "Item or service line details detected.",
+        "Currency amount detected.",
+        "Final total or payable label detected.",
+        "Tax, GST, or payment detail detected.",
+        "Bill number, transaction date, and multiple amounts detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 73,
+      "merchant": {
+        "value": "BRAHMINS THATTE IDLI-",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": "21-04-2026",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "total": {
+        "value": 550,
+        "confidence": "high",
+        "needsReview": false
+      },
+      "currency": {
+        "selectedAmount": 550,
+        "normalizedAmount": 550,
+        "code": null,
+        "originalText": "550.00",
+        "confidence": "low",
+        "normalization": "certain",
+        "normalizationReason": "one or two trailing digits indicate decimal precision",
+        "reason": "no reliable currency indicator on the selected payable candidate"
+      },
+      "category": {
+        "value": "Food",
+        "confidence": "high",
+        "needsReview": false
+      },
+      "rawText": "Brahmins Thatte Idli-\nBasaveshwar nagar\n#19, Karanla Chambers, 3RD Block\nBasaveshwaranagar. Bengaluru-79\nGST-29AAQFP6766L12Z5\nI ——————\nName:\nah ET Le\nDate; 21/04/26 Dine In: BTI\n07:57\nCashier: biller Bill No.: 27\nToken No.: 27\nBlech dod 0 5 GSE 2\nItem Qty. PriceAmount\noe —————————————\nGhee Podl Thatte 1 75 75.00\nIdli (1Pcs)\nGhee Podi Masala 5 95 475.00\nDosa\nLe  ——————————————————\nTotal Qty: 6 Sub Total 550.00\nee —————————————\nRound off -0.03\nGrand Total ¥550.00\nFSSAI Lic No. 11219332000580\nThank You, Visit Again.\n"
+    },
+    {
+      "image": "B24.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "Zaika Family Restaurant",
+        "date": "26-09-2025",
+        "total": 1050,
+        "category": "Food"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Zaika Family Restaurant",
+          "actual": "P S CG",
+          "correct": false
+        },
+        "date": {
+          "expected": "26-09-2025",
+          "actual": "26-09-2025",
+          "correct": true
+        },
+        "total": {
+          "expected": 1050,
+          "actual": null,
+          "correct": false
+        },
+        "category": {
+          "expected": "Food",
+          "actual": "Food",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Item or service line details detected.",
+        "Currency amount detected.",
+        "Bill number, transaction date, and multiple amounts detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 38,
+      "merchant": {
+        "value": "P S CG",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "date": {
+        "value": "26-09-2025",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "total": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": null,
+        "normalizedAmount": null,
+        "code": null,
+        "originalText": null,
+        "confidence": "low",
+        "normalization": "unavailable",
+        "normalizationReason": "no selected payable amount",
+        "reason": "currency cannot be detected without a selected payable candidate"
+      },
+      "category": {
+        "value": "Food",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "rawText": "3 id\n= 4 |\n. &\nR\n-\ngr\np> S cg\n» 3 ¥e\n5 4 i.\n> ov ce 2\n3 = Jd\n- . gr -\nZAIL )\n“ KA FAMILY RESTA Ug av - g\n-_ - \\N\nNABAD RAIL W AY STATI\nBR \"RACHIN DEV] MANDIR. a h\ntact: BSA0554090, 985277777 EMR\neT Ta :\nfe Rill No 2478 Table Ny pi wy\nDate 26-Sep-2025 23:16:24 » ;\nre | ERLE J\nPANEER MASALA ra 1\nPANEER MASALA LO 1390 1300, Og\nA BUTTER NAAN 40 350 4000 [han :\nSn ¢ og\n-— MINERAL WATER (1 LTR) 50 294 100.0 OR = ad\na 228 (167.00 gN A\nfh 10.0% 116.7 ET\n|\nRound Off 0.30 ae SR\nNechayabigge Ss o10se00 BN\nThanks & Visit again TORRE RE\n’ Kot #: 98,103 ge.\nS—— = de\n7 —. UN\n‘ F 4 4\n{ ¥ Be A Fe\n5 ? ga\n4 ; .{ (i 5 J ES\n4 <i aC\na P : y \\- v\n: / : v [S\n“ p 4 - f\ny p = a y\n"
+    },
+    {
+      "image": "B25.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "Manas Family Resto & Lounge",
+        "date": "22-06-2026",
+        "total": 2821,
+        "category": "Food"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Manas Family Resto & Lounge",
+          "actual": "OUNG",
+          "correct": false
+        },
+        "date": {
+          "expected": "22-06-2026",
+          "actual": null,
+          "correct": false
+        },
+        "total": {
+          "expected": 2821,
+          "actual": 2821,
+          "correct": true
+        },
+        "category": {
+          "expected": "Food",
+          "actual": "Food",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Merchant or business identity detected.",
+        "Item or service line details detected.",
+        "Currency amount detected.",
+        "Final total or payable label detected.",
+        "Tax, GST, or payment detail detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 71,
+      "merchant": {
+        "value": "OUNG",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "total": {
+        "value": 2821,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": 2821,
+        "normalizedAmount": 2821,
+        "code": null,
+        "originalText": "2821.00",
+        "confidence": "low",
+        "normalization": "certain",
+        "normalizationReason": "one or two trailing digits indicate decimal precision",
+        "reason": "no reliable currency indicator on the selected payable candidate"
+      },
+      "category": {
+        "value": "Food",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "rawText": "oung®\nManas Family Resto v' 4\nNH4, Near Toyato showrom Var fo)\nMabile: 9923887001/8308) K5828117)\nFS5A1:115 190390000751 GSTIN: 27AIUP\n5 Tax jnvoice 2 06 201\nBil No: Date: « |\noe) 5\" Time: 8:25 pm\n: 0: 22\n= A A vil\nITEM(S) GER\nM 00 1089.0U\nYON Hang ppaiyani Full 1108 9.00\nRoastaq Papad 1 39.00 39.\nRoti 7 29.00 203.00\nTupatil Indrayani Dal khichdi 1 300.00 300-00\nSoft Drink 600ML 1 40.00 40.00 \\\nPaneer sholay kabab 1 330.00 330.00\nSolkadi 2 59.00 118.00\nMutton Lonche 1 459.00 459.00\nRice jeera Half 1 109.00 109.00\nTotal: 2687.00\n2.5% CGST: L/.18\n25% SGST: 67.18\n‘Net Amount : 2821.00\nThankyou - Visit Again |\nFasvbill Softwares 9270033668 / 8275171730\n"
+    },
+    {
+      "image": "B26.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "uncertain",
+      "classificationCorrect": false,
+      "expectedFields": {
+        "merchant": "Aavkar",
+        "date": "12-06-2023",
+        "total": 700,
+        "category": "Groceries"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Aavkar",
+          "actual": "EU NEE N LO HORS AE BD",
+          "correct": false
+        },
+        "date": {
+          "expected": "12-06-2023",
+          "actual": null,
+          "correct": false
+        },
+        "total": {
+          "expected": 700,
+          "actual": null,
+          "correct": false
+        },
+        "category": {
+          "expected": "Groceries",
+          "actual": "Other",
+          "correct": false
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Currency amount detected.",
+        "OCR evidence is insufficient to classify confidently."
+      ],
+      "ocrConfidence": 35,
+      "merchant": {
+        "value": "EU NEE N LO HORS AE BD",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "total": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": null,
+        "normalizedAmount": null,
+        "code": null,
+        "originalText": null,
+        "confidence": "low",
+        "normalization": "unavailable",
+        "normalizationReason": "no selected payable amount",
+        "reason": "currency cannot be detected without a selected payable candidate"
+      },
+      "category": {
+        "value": "Other",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "rawText": "eu nee N LO hors, ae bd %\nom an Bee RE oa &\nio bie Qu ante et { Cig +i\n3 en cod? oad Zes™ t . it\na\n> iS a 40° es ® il\n= PEC 09° 090 i\n= 2 RIE 0 pet 1.00 150 Ct\n~~ 2109 o® 600 |\n5 3 Sioa 400 0 20: © ~\nCiel, 5300 690 ot\n25 a ees BR 4.00 2 rod\ny ps 900 90%\n3 5 oa 120 400 Joo\neg, a RRC\n. 09 0\n© ou erutt w 4.00 400 400 00\nj G5 wit\nq 6.0\" 000 090\nWe 1 ore qe ARSE 50 00%\n>) ee EG, 0° 00\nA = =o £50 ? J 4.00 10 100°\n= oe 48C\n= 5 00% 00%\nE > 9 ers coo! 3.00 20 00°\n= ; ; “ind\n= Seo 8% at\nPres oe 200 gy oo\n= 000 ot\nidl\n= hips ne i gle 10 pros 100°\n3 a asi Tea Hao je o°\na a n—— a ccs aA ot nS\n= lhe = Te i 00° 000 oo 00°\nGIES = on sd . 600 1420 00 1420\n= Ne Sig 9.0% 95k 90° 9.54\nIr =\neee ’\n5 ay or? 2 100°°\noe ja NE aw\n"
+    },
+    {
+      "image": "B27.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "The Sunday House",
+        "date": "27-12-2025",
+        "total": 2015,
+        "category": "Food"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "The Sunday House",
+          "actual": "KITTY BIRTHDAY PARTY",
+          "correct": false
+        },
+        "date": {
+          "expected": "27-12-2025",
+          "actual": "27-12-2025",
+          "correct": true
+        },
+        "total": {
+          "expected": 2015,
+          "actual": 2015,
+          "correct": true
+        },
+        "category": {
+          "expected": "Food",
+          "actual": "Food",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Invoice, bill, or receipt header detected.",
+        "Item or service line details detected.",
+        "Currency amount detected.",
+        "Final total or payable label detected.",
+        "Tax, GST, or payment detail detected.",
+        "Bill number, transaction date, and multiple amounts detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 82,
+      "merchant": {
+        "value": "KITTY BIRTHDAY PARTY",
+        "confidence": "high",
+        "needsReview": false
+      },
+      "date": {
+        "value": "27-12-2025",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "total": {
+        "value": 2015,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": 2015,
+        "normalizedAmount": 2015,
+        "code": null,
+        "originalText": "2015.00",
+        "confidence": "low",
+        "normalization": "certain",
+        "normalizationReason": "one or two trailing digits indicate decimal precision",
+        "reason": "no reliable currency indicator on the selected payable candidate"
+      },
+      "category": {
+        "value": "Food",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "rawText": "ain\nB\nThe Sunday House\nPUNJABI BAGH, NEW DELHI, 110026\nFOR KITTY/ BIRTHDAY PARTY\npo RESERVATION\nCONTACT NO. 9911826663, 991183666:\nVAT NO - 07497227425\n____GSTIN NO -07AAKFE1606112Z)\nName: lig\nDate: 27/12/25 Dine In: 12\n19:02\nCashier: Kamal Bill No.: 41673\nItem Qty. Price Amount\nSunday Virgin Mojito - 1 385.00 385.00\nAskk For Flavours\nRomantic Na Wine 1 385.00 385.00\nSangria\nWild Mushroom & 1 765.00 765.00\nParmesan\nBACARDI CARTA 1. 255.008255 00\nBLANCA (30ml)\nee eee\ny Sub\nTotal Qty: 4 Total 1790.00\nStaff Contribution 80.55\nSGST 2.5% 40.39\nCGST 2.5% 40.39\nVAT 25% 63.7%\nRound off -0.03\nGrand Total 2015.00\nSunday, I am in love!\nThank you for visiting!\n"
+    },
+    {
+      "image": "B28.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "Lulu Lounge",
+        "date": "05-11-2023",
+        "total": 8098,
+        "category": "Food"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Lulu Lounge",
+          "actual": "EER AM) ARS HO",
+          "correct": false
+        },
+        "date": {
+          "expected": "05-11-2023",
+          "actual": null,
+          "correct": false
+        },
+        "total": {
+          "expected": 8098,
+          "actual": 8098,
+          "correct": true
+        },
+        "category": {
+          "expected": "Food",
+          "actual": "Food",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Currency amount detected.",
+        "Final total or payable label detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 47,
+      "merchant": {
+        "value": "EER AM) ARS HO",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "total": {
+        "value": 8098,
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": 8098,
+        "normalizedAmount": 8098,
+        "code": null,
+        "originalText": "8.098,00",
+        "confidence": "low",
+        "normalization": "certain",
+        "normalizationReason": "distinct thousands and decimal separators",
+        "reason": "no reliable currency indicator on the selected payable candidate"
+      },
+      "category": {
+        "value": "Food",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "rawText": "EER © am) ARS ho\nPY LL 1% 3\np s iol\nys [ hee\nMAS A oe\n; 2p ad) ver 4 .\na con. = &,\nLn -&\nJ ¥oitto (virgin) 166.00\nER TT se &\n} Soda reais Ell 00\nFd 1 a Sebast 1a: 210.00 1\n« 2 Su7scl 172,00 =\n3 Vodka Shot 714,00\n1 Coca Cola Zero 96,00\n-Y 1 %10 SERVIS UCRETI 736,00 A\n: Topln 8.098,00 og :\nd EFECAN SECKIN (02:45-Nargile) -\nBEEsSssssSsssSSSSTIISIISISIISIEZ ,\n#55 MALI DEGER1 YOKTUR ++ NN\nJ Orion POS Sistemleri h\ny 0850 333 70 91 wWww.or fonpos con 3\n"
+    },
+    {
+      "image": "B29.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "Nusr-Et Miami",
+        "date": "16-10-2019",
+        "total": 6228.05,
+        "category": "Food"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Nusr-Et Miami",
+          "actual": "NUSR-ET MIAMI",
+          "correct": true
+        },
+        "date": {
+          "expected": "16-10-2019",
+          "actual": null,
+          "correct": false
+        },
+        "total": {
+          "expected": 6228.05,
+          "actual": null,
+          "correct": false
+        },
+        "category": {
+          "expected": "Food",
+          "actual": "Food",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Merchant or business identity detected.",
+        "Item or service line details detected.",
+        "Currency amount detected.",
+        "Tax, GST, or payment detail detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 74,
+      "merchant": {
+        "value": "NUSR-ET MIAMI",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "date": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "total": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": null,
+        "normalizedAmount": null,
+        "code": null,
+        "originalText": null,
+        "confidence": "low",
+        "normalization": "unavailable",
+        "normalizationReason": "no selected payable amount",
+        "reason": "currency cannot be detected without a selected payable candidate"
+      },
+      "category": {
+        "value": "Food",
+        "confidence": "high",
+        "needsReview": false
+      },
+      "rawText": "yr\nNusr-Et Miami\n999 Brickell Ave\nian, FL 33131\n305-415-9980\n40 David P\nChk 3484 42 Gst 6\n0ct16'19 09:56PH\n2 oysters 12 Pcs 100.00\n2 King Crab Legs 120.00\n2 Grill Prawns 100.00\n2 Heat Sushi 60.00\n2 Burrata 60.00\n4 #SaltBae Passion 120.00\n2 Voss §ti1l 20.00\n6 J. Blue 552.00\n1 Sprite 10.00\n5 2 1 \"Spaghetti\" 160.00\nyo 2 French Fries 30.00\n2 Mashed Potato 38.00\n. i 2 Spinach 38.00\nvl 2 Sweet Corns 38.00\nwm, 2 1 Lokun 160.00\nli 2 Istanbul §.Loin 200.00\nne Tonahaik 275.00\nGa Golden Tomahank 1000.00\nfi sirt for 3 220.00\nsy 2 Gold Baklava 130.00\ni \\ 4KGold de Brut 1500.00\n2:51A 6228.05 f\n"
+    },
+    {
+      "image": "bills/B1.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": [
+          "Vernon Fox Trading Ltd",
+          "Vernon Fox"
+        ],
+        "total": 27.5,
+        "category": "Shopping"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": [
+            "Vernon Fox Trading Ltd",
+            "Vernon Fox"
+          ],
+          "actual": "INTE",
+          "correct": false
+        },
+        "total": {
+          "expected": 27.5,
+          "actual": 27.5,
+          "correct": true
+        },
+        "category": {
+          "expected": "Shopping",
+          "actual": "Shopping",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Invoice, bill, or receipt header detected.",
+        "Currency amount detected.",
+        "Final total or payable label detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 50,
+      "merchant": {
+        "value": "INTE",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "total": {
+        "value": 27.5,
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": 27.5,
+        "normalizedAmount": 27.5,
+        "code": "GBP",
+        "originalText": "£27.50",
+        "confidence": "high",
+        "normalization": "certain",
+        "normalizationReason": "one or two trailing digits indicate decimal precision",
+        "reason": "currency identified by an explicit GBP code or symbol"
+      },
+      "category": {
+        "value": "Shopping",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "rawText": "4 bai 14 Ws\n4 TF Ja fe! di\n€ EL aa\nINTE\nRE ls bby i >\nhE u]  [m] i\n> a? bE\nRA &\n1) 0] Eu\n= 3 \" a\nPp EF eg\nof i 5 Vernon Fox Trading Ltd (Ipswich) Ei pz fhe?\n$F asement Shop, 26 Can Lane, Ipswich, IP4 1EJ po 1\nSe VAT #: 380 7602 93 “ogell\n~ 38 Employee: Cashier 4 = a\ni oy POS: Ipswich1 oi de\n= eran Ee\nR |1 Women's Clothiny ite\nBh t. g £3 his cae\nSRB 4x£3.00 £12.00 J Bs 40\n1354 v heat\n| Women's Clothing £10 £10.00 Cpe\nab 1 x £10.00 i fey i dr i\n\\ lomen's 5 LE i Le\nLS \\ en's Clothing £25 £25.00 pa pi\nA SY 1x£25.00 Bia\nFoe Win\nee Ng = Homewares £4 e700 ie ji hip\nERs 1 x £4.00 S Le La hi)\nA + \\ 50% Off Clothing oss Bi on I\nBo Total £27.50 é\n[ VAT, 20% en Zi\ncae £27.50 i\nal Items marked * are not subject to VAT.\n48 Recelpt currency: £/GBP\nh-S «©\nY\ncif Returns are NOT accepted unless goods ave faulty. ;\naA Please retaln your recelpt as proof of puichase - We\n6 GF cannot refund without a receipt. i\nNS \\\n® SHOP ONLINE WITH Us!\n@ Find even more Bargains and Discounted Goods al\nwww. vftrading.co.uk\n|\n|\nCu? 4d\n"
+    },
+    {
+      "image": "bills/B10.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "Tesco",
+        "date": "15-08-2026",
+        "total": 49.01,
+        "category": "Groceries"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Tesco",
+          "actual": "LE A MM",
+          "correct": false
+        },
+        "date": {
+          "expected": "15-08-2026",
+          "actual": "15-03-2026",
+          "correct": false
+        },
+        "total": {
+          "expected": 49.01,
+          "actual": 43.01,
+          "correct": false
+        },
+        "category": {
+          "expected": "Groceries",
+          "actual": "Groceries",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Currency amount detected.",
+        "Final total or payable label detected.",
+        "Recognized grocery retailer detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 49,
+      "merchant": {
+        "value": "LE A MM",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": "15-03-2026",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "total": {
+        "value": 43.01,
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": 43.01,
+        "normalizedAmount": 43.01,
+        "code": "GBP",
+        "originalText": "£43.01",
+        "confidence": "high",
+        "normalization": "certain",
+        "normalizationReason": "one or two trailing digits indicate decimal precision",
+        "reason": "currency identified by an explicit GBP code or symbol"
+      },
+      "category": {
+        "value": "Groceries",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "rawText": "2 a ra 3 \"| 1\nLE a mm\n\\ } Ri\nhy Fog y\n1 TESCO ayy OF\n[A . Q Any questions please visit 1 i\nt wm. e500, Con/s tare | aoator [|\nX = VAT Number: GB 220 4302 G1 i ‘-\n- a 1 Tesco Green Peppors Each £0.70 3 i\n4 5 2 Tesco Fresh Cut Corlander 30g £1.00\n€ £0.50 each\n; N 2 Tesco Mangetout 180g £3.20 8\nSTN £1.60 each\n= x. oe 1 Tesco Fairtrade Organic Bananas 5 | £1.50 Ss\n24 Pack A | —\n3 ) 1 Tesco 0% Fat Greek Sty)e\\Yogurt tka £1.70 A ARTE\na A 1 F&F Baby 2-plece Pure Cotton Teddy £14.00 JIE Qs\nBear Print Corduroy Dungérees And ? iin! oh\n5 > Bodysuit Set In White i EC Bll\n. fre Ce Save 25% £3.50 { MRE Re J\nERE 1 Tesco Pink Onions 1kg £0.95 i i\n> 1 F&F Baby Pure Cotton Ribbed £14.00 [FREE ha hand Bic\n< Strawberry Print 1.5 Tog Sleeping § a | WE\nRy  ¢ Bag In Pink i Ph) we\n> 8 Reduced To C] ear £5.00 8 (UT or\n- Cc Save 25K £2.25 [el fie 1\n5 I . 1 Tesco Classia Round lunatoes 6 Pack £0.99 [RR fi {hal\n> Ce 6% -co.20 [EER ra\nn, § > Bl | FEF Baby 2-piece Knitted Teddy boa £19.00 [NEUES gn:\nRU Dungares And Bodysuit Set In Hhite é ofa A {\n) 0% ; Cc Save 25% -£3.50 5 ifr) a\nos e500 Fine Beans 200 0 3 il\n>» EN Ce R100 2 el ! J\n$i y 4 £0.40 pli EE\nie 1 F&F Baby 2-plece Pure Cotton £12 50 [HEI HR\nEN { on Crochet Shirt And Sherts'Set In 1 SA RR\nGreen i 3d di p\n« 4 Reduced To Clear ¥% foul HE\nn 1 Cc Save 25% So MEE ET IE\n) X 1 F&F Baby 2-piece Puré Cotton £12:50 [EER SI ERIE\np oH Kni ted 219289 Shirt Aud Shorts Set EH\n¥ 3 In Blue a a EE\n. p Reduced To Clear . RE aE URE\ntg Cc Save 25% 4 So Br i i it] i.\nay D\\\\| ! Tesco Tonatoes-On The Vine 5005 c1.50 MERA WAIN (A\nFe BY 1 Tesco Organic Bestroot 4509 oo Bl BE dh\n4 BE 1 Tesco Organic British Sen] Skinned £3.45 Ligeti AR ge J\np B® Milk 2.272174 Pints w/ FEL\n1 Tesco Organic Carrots 700g £1.35 an i\n@ < Tesco Sweet Corn Each Clasesd £2.80 bide Wa\n£0.70 each GON GU\n> g Ce 50p ~£0.80 A i\n—emeii tl BRENT A ENS CO rte EH\n3 subtotal £88.74 Pr\nbY Savings: -£39.73 ga bg\n3 Promot fons -£28.75 0B 0\nF&F (20% Col |. Discount: £7.95 MH a\n: - 15% Colleague Discounts -£3.03 i ji 1\n1 TOTAL: ( es E901 : js\nBa 2 Giftcard £43.01 ; Eo\nClubcard points earnadi | LL 49 STEN\nClubcard points balances 131 SEN!\nh RQ 50450750149xxx4559 Tis\n- RN otro Solana hr £0.00 Se\n- a= Giftcard Fir\n¢ BD 50450750149» = ¥8218 Spy\nAN << New gl frcard balance £0.00 AS\n‘ - SS\na \\X BT TRA fe re re >\n» TE ay\n< Cd = a5) 1KOP-163H-K05BY64C1 LY\nNNN, Sy 15/03/2026 20157 siogel 2741 Oveckeuts 073 3\noh | ¢\nrR hb R\n« i\n"
+    },
+    {
+      "image": "bills/B11.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "Tesco",
+        "date": "06-10-2026",
+        "total": 66.29,
+        "category": "Groceries"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Tesco",
+          "actual": "OF IPEWT EXTRA & FF IE",
+          "correct": false
+        },
+        "date": {
+          "expected": "06-10-2026",
+          "actual": "06-10-2026",
+          "correct": true
+        },
+        "total": {
+          "expected": 66.29,
+          "actual": 66.29,
+          "correct": true
+        },
+        "category": {
+          "expected": "Groceries",
+          "actual": "Groceries",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Currency amount detected.",
+        "Recognized grocery retailer detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 49,
+      "merchant": {
+        "value": "OF IPEWT EXTRA & FF IE",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "date": {
+        "value": "06-10-2026",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "total": {
+        "value": 66.29,
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": 66.29,
+        "normalizedAmount": 66.29,
+        "code": "GBP",
+        "originalText": "£66.29",
+        "confidence": "high",
+        "normalization": "certain",
+        "normalizationReason": "one or two trailing digits indicate decimal precision",
+        "reason": "currency identified by an explicit GBP code or symbol"
+      },
+      "category": {
+        "value": "Groceries",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "rawText": "\\ % Me oA REE 7 Oa a\nES ll 4\n: E oy 0 ty\n: iT. Oo Gi Sp 4\n0s al Sa £5\nof Ipewt Extra & FF ie\nof Any ques Please vigit i £4 oA\n\\ wie 16500 -C/St0e- ocaton 5 py es\nVAT Number :lGB 220 4307 31 hall 0 en\nN iY 5 a §& GAT UE\n& 5 FsF Baby 3-piece Horal Corduroy a FB y\n§ 8! fonpor, Bodysui Wha Tight Set - 21° LW i\n{Mit ¥ Be\n= & | Reduced To Clea £5.50 3 Wh: 3\nSES 1 Disney Mickey e Varsity Jacket £14.00 [SEER (EERE\ni SH In Blue 5 5 fe 3 gy\n°N ; = Reduced To C -£6.00 Wa aa\n2 7: ls 1 F&F Baby 2-pig€e Knitted Teddy Bear £14.00 HE\nQD 3 Dungaree And Bodysuit Set In White re\n| Reduced To Clear £6.00 fF A \"i\n- REN 1 Tesco Red Onidhs Pack 1kg £0.95 WM HFA THEY\n& 2 = Cc 80p -£0.15 sn\n5 od BS 1 F&F Baby 3-p Borg Set In Grey £20.00 el AE\n¥ sl Reduced To Clear -£8.00 [EESEAG HEN Se j\n3 LX 1 Tesco Green Beans 220g £0.85 WEE Jl ©\n1 F8F Baby Quilted Bear Jacket In £12.50 ia Sli\nw N Grey & E EE\noe Reduced To Clear £4.50 BEGET. ERLE\nv I S| 1 F&F Baby 2-plece Bunny Pinafore And £14.00 Se aes\nh ESE Las Long Sleeved Bodysuit Set In Pink Wp EE\n1 NN (i: Reduced To Clear -£6.00 a en\n8 | 1 Disney Mickey ad Varsity Jacket £14.00 EESCEENEEE ie\n3 A 5 In Blue \\ 4 i rou\n’ Pa Reduced To Clear -£6.00 i i =\n€ : \"SERN 1 F&F Baby 3-piece Borg Set In Grey £20.00 FR EE\n§ = Reduced To Clear £8.00 BREE cf = El\n) N @./ 4 1 Disney Mickey Mouse 2-piece Pure £18.00 [EEE Rs =\nB X Cotton Dungaree Set In Blue fo EE\nHs Reduced To Clear -£8.00 § 4 Ea\n. RR emma aps. foo SF\nNE | swtotal: £140.80 BRAG Ui\na | Savings: £74.51 WE il\nbh Promotions: -g58.15 ME\n3 pi y d F&F 20% Coll. Discount: -£16.20 ER\n- | Colleague Discount: £0.16 3\nEEN on. £66.20\npn Giftcard £66.29 [EE\nof Ws OTE SR ES SE CREE FL SE\nF \\ iW Ba Clubcard points earned: . 66 &\nClubcard points balance: / 54 §\n« 5 3 Qi toard GL amv on J T\n& 3 50450750149 xxx3557 {\n\\K @ New giftcard “alone: £0.00\nw+ BOTTI\nQa Wn) 1KQP-163H-KOSE-Z2H)\n06/10/2026 19:51 Store: 2748 Checkout: 074\"\nNY =\nY ¥ 3 4\n. > }\n0) wA ¢\n\\\n\\\n"
+    },
+    {
+      "image": "bills/B12.jpg",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "Sakala Jewellery House",
+        "date": "06-06-2026",
+        "total": 16800,
+        "category": "Shopping"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Sakala Jewellery House",
+          "actual": "I CONYE- J",
+          "correct": false
+        },
+        "date": {
+          "expected": "06-06-2026",
+          "actual": "06-06-2026",
+          "correct": true
+        },
+        "total": {
+          "expected": 16800,
+          "actual": 16800,
+          "correct": true
+        },
+        "category": {
+          "expected": "Shopping",
+          "actual": "Shopping",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Invoice, bill, or receipt header detected.",
+        "Merchant or business identity detected.",
+        "Item or service line details detected.",
+        "Currency amount detected.",
+        "Tax, GST, or payment detail detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 43,
+      "merchant": {
+        "value": "I CONYE- J",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": "06-06-2026",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "total": {
+        "value": 16800,
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": 16800,
+        "normalizedAmount": 16800,
+        "code": null,
+        "originalText": "16800.00",
+        "confidence": "low",
+        "normalization": "certain",
+        "normalizationReason": "one or two trailing digits indicate decimal precision",
+        "reason": "no reliable currency indicator on the selected payable candidate"
+      },
+      "category": {
+        "value": "Shopping",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "rawText": "i \\ \\ CoNye- J [® \\\\ ; = =\n2 Fo \\ / ¢ {\niL ; = Day » ) A val\n. y 7 7 N \\ | rae, mam LEER RS FETS SIRS SS dh : OF ASL = AV S—\ndq GSTIN : 29AACFS6087P1ZA |\n\\ <<< N\nYY 7,\n’ ) vg Z\nBN | XV sAKALA JEWELLERY HOUSE oN ///\ncog (SINCE 1976) ; /\n¥ TAX INVOICE en\n5 ( Customer Copy :\nN Customer Details: State code: 29 | {\n\n; JAGADEESH M Date: 06-06-2026 | 7\nFY BANGALORE An 77\nEe Le 7\n= STAFF: BHARATH |\nEe J\n4 /\n\nEE\nSI Description HSN Pcs Purity G.Wt N.Wt Rate VA MC Stone Amount |\nIn Gms In Gms Charges Jes)\n: EEA NE ASU IS ION ROT 6HM 0 1.0400 1.040 1400012.02%  16310.00\n1)\ne|\ny EEEENUDES IEE | Round off: -0.68\nfe LLHOJ8s2 16800 GST Value:  16310.68\n| | CGST@1.50%: 244.66\n| SGST@1.50%: 244.66 E\n| Net Bill Value: 16800.00 SN\nET In words : (Rupees Sixteen Thousand Eight Hundred Only) 3 hy\ni < % \\ W\nBp: For Customer For SAKALA JEWELLERY HOUSE an NN\nZs | WN :\nEr \\ (4, DON\n: % 5 “5\nd 2 =\nor —_—\nAl ta | = 2\n= 4 ==\nED a\n$) g\neo, 7 SEIW SSI “SI SSI Sih i §17 11 j 1 I / 5\n3) 8 4 « SY 5 4 Sy : Lh) 3 Wy \" SH % 1) / ) Vs ) ) » J p—\ni gl 7» ip <0 Aree / Sip <p iy td 7 SSA SSI SRA “aii jf fi} J ath BL k 5 =\n> 8 3 py o> Wi NY 7 \\y WY 5 V \"74 Wy7 7 \\ AX 0 33rd Cross, avanagar OC : x\nbfi0aR: hop No, 82: Laxmi Venkateswara Arcade, 1Lth Main Road 33 bo ALATA\na INQ al 5h he Bad 022220793, 4122 6093 (R)' Office Mob, No.: 810520 (11a Pp\nKOR, 2 SW x 2358 ves Saves Nr eS Ga NN dom BR TAR ROR y $1 :\n7p Ta WY & M ob; 93 1240551 RISUbramahyain) 9512295455 5. Fornvas) RISE\nNNN, 0 SN WN CER 5 » PT ERD LTH Lid Ear : amail SU 8 QW Ai \\ EE\nPRY 12 <p Ns ip HZ Sy <p Email sakalajewellery@gma com < - is\nSs oro gees > < No 7 20 { 0 =\nCY ous a, Tr : =\nbeg! 0 g LY} N 07% LEN po % 3 { gS ¢ hd 1 <3 | Ta\n3 3 5 \\ / NN | 2 i rr EAS TT\n7) ACR IN— Ne a . ho w » a EE a\nJ Chane vie Rg = . a EER\n"
+    },
+    {
+      "image": "bills/B13.jpg",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "Sri Rajalakshmi Silvermine",
+        "date": "06-06-2026",
+        "total": 7880,
+        "category": "Shopping"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Sri Rajalakshmi Silvermine",
+          "actual": "SS JAYANAGA",
+          "correct": false
+        },
+        "date": {
+          "expected": "06-06-2026",
+          "actual": "06-06-2026",
+          "correct": true
+        },
+        "total": {
+          "expected": 7880,
+          "actual": 7880,
+          "correct": true
+        },
+        "category": {
+          "expected": "Shopping",
+          "actual": "Shopping",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Invoice, bill, or receipt header detected.",
+        "Merchant or business identity detected.",
+        "Item or service line details detected.",
+        "Currency amount detected.",
+        "Final total or payable label detected.",
+        "Tax, GST, or payment detail detected.",
+        "Bill number, transaction date, and multiple amounts detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 61,
+      "merchant": {
+        "value": "SS JAYANAGA",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": "06-06-2026",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "total": {
+        "value": 7880,
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": 7880,
+        "normalizedAmount": 7880,
+        "code": null,
+        "originalText": "7880.00",
+        "confidence": "low",
+        "normalization": "certain",
+        "normalizationReason": "one or two trailing digits indicate decimal precision",
+        "reason": "no reliable currency indicator on the selected payable candidate"
+      },
+      "category": {
+        "value": "Shopping",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "rawText": "¢ 4th Block;\nss, Jayanaga\n{1th Main Road: 3 18904597 CR wis :\nVenkateswara Arcade; Office Mob. po Srinivas)\nVe 2 6093 (R) 5455(S:P.\n22220793, i yan), ypiael =\nra Leo ;\n940551(S.P/SUDFE (y@oMa :\nEmatl cakalajewele J\n= ;\n)\n&\n- A unit of Rajalakshmi Jewellery Mart\nTAX INVOICE\n5 JA\nStlverm neil HE ABA\nwvernne 5a GALORE |\nB: 7904217648 Invoice No :SMB26-27/172\nNo. 41, 33rd cross, Date  : 06-06-2026\nJayanagar 4t Sai SE\nLp h Block, Rate: SILVER 245.00\nBangalore -560 041\nPARTICULARS Purity PCs| GROSS NET| MAKING| AMOUNT]\nGSTIN - 29AABFR4244E1ZC HE Std Sateen |\n2 080 ETS 1 [HIP CHAIN SILVER | 711319 | 1 30.000| 30.000 7650.00\n38\n© +91 63630 65064 |\n[=] srirajalakshmisilvermine@gmail.com\nTime - 10:30 AM - 8:00 PM\nSE Pet EEE EE ee Ra iE Sl ER EERE RC a a 1\nSr WL Round off: -0.48\ni 0): GST Value: 7650.48\nEA CGSTR1.50%: 114.76\n®t SGSTR1.50%: 114.76\nSHIRAJALAKSHMISILVERMINE Fl Total Amount: 7880.00\n} Card Recd: 7880.00\nrl 15}\nSy\non Customer Signature For fo Ws FEVER\ni (Rupees Seven Thousand Eight Hundred Eighty Only)\n“ER Join Our Attractive Silver Saving Scheme\nVe a\nhe i gn eT E—\n"
+    },
+    {
+      "image": "bills/B14.jpg",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "GET Electronics",
+        "date": "03-05-2026",
+        "total": 14000,
+        "category": "Shopping"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "GET Electronics",
+          "actual": "- Q F PY (A X -",
+          "correct": false
+        },
+        "date": {
+          "expected": "03-05-2026",
+          "actual": null,
+          "correct": false
+        },
+        "total": {
+          "expected": 14000,
+          "actual": null,
+          "correct": false
+        },
+        "category": {
+          "expected": "Shopping",
+          "actual": "Other",
+          "correct": false
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Invoice, bill, or receipt header detected.",
+        "Merchant or business identity detected.",
+        "Item or service line details detected.",
+        "Tax, GST, or payment detail detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 53,
+      "merchant": {
+        "value": "- Q F PY (A X -",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "total": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": null,
+        "normalizedAmount": null,
+        "code": null,
+        "originalText": null,
+        "confidence": "low",
+        "normalization": "unavailable",
+        "normalizationReason": "no selected payable amount",
+        "reason": "currency cannot be detected without a selected payable candidate"
+      },
+      "category": {
+        "value": "Other",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "rawText": "GSTIN : 29JBGPS3204E1ZK Mob : 9900928958\n680/A. 9th Main Road, Sector 7, H.5.R. Layout, Bangalore - 560102\nSO oate_I] [5 cf sr ———\nWr SRG INES isa, INVOIGENGT “B30 Sl\nAddress........ 06 Dood DRscawews alm\n- Q f Py — (a x -\nnS a CE ra.\nNo| DESCRIPTION OF GooDS ioncou| Qty [ Rao | Amount |\nSe\n| 0) [AbA yoo fee magic Sc Lo Pg a\n| » (:\n\\ I~ :\nLey fod 26k\n1-1 of ky Bp (al Las 0c |\n| Mathis tl F145 je\n+ Yeu g wavy |\ni. b Va ths free Mei\n# |\nFe ep / 3,5 20\nor a |\nEL | Er\nE  AMOUNE RUPEES... remem] For : BET ELEETRONICS\nE meee Go TE rised Signature\n“\\. | Goods once sold will not be take back or exchange Authe ona\n"
+    },
+    {
+      "image": "bills/B15.jpg",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "Nidhi Motors",
+        "date": "05-11-2026",
+        "total": 2841,
+        "category": "Transport"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Nidhi Motors",
+          "actual": "NIDHI MOTORS",
+          "correct": true
+        },
+        "date": {
+          "expected": "05-11-2026",
+          "actual": "05-11-2026",
+          "correct": true
+        },
+        "total": {
+          "expected": 2841,
+          "actual": 2841,
+          "correct": true
+        },
+        "category": {
+          "expected": "Transport",
+          "actual": "Transport",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Invoice, bill, or receipt header detected.",
+        "Merchant or business identity detected.",
+        "Item or service line details detected.",
+        "Currency amount detected.",
+        "Final total or payable label detected.",
+        "Tax, GST, or payment detail detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 60,
+      "merchant": {
+        "value": "NIDHI MOTORS",
+        "confidence": "high",
+        "needsReview": false
+      },
+      "date": {
+        "value": "05-11-2026",
+        "confidence": "high",
+        "needsReview": false
+      },
+      "total": {
+        "value": 2841,
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": 2841,
+        "normalizedAmount": 2841,
+        "code": null,
+        "originalText": "2,841.00",
+        "confidence": "low",
+        "normalization": "certain",
+        "normalizationReason": "distinct thousands and decimal separators",
+        "reason": "no reliable currency indicator on the selected payable candidate"
+      },
+      "category": {
+        "value": "Transport",
+        "confidence": "high",
+        "needsReview": false
+      },
+      "rawText": "NIDHI MOTORS\n281/8, Near Silk Board Circle NH-7, H\n”\" =, Aosur i oes\nState Code: 29 Contact: 7353300092, 7353 a BOMMANAHALLI, BANGALORE, 560068 Tis\nGSTIN No: 29ADAPR8841D12D 5 : —\nAssociate DealerAuthorised Dealer: Hero MotoCorp | tg\nTAX INVOICE Sriginal For 20 ba\nuplic For Transporter\nPlace of Supply TAMIL NADU, 33 Cash Trivlioats For Supplier\nCustomer Name JAGADEESH M :\nAddress 45, THILLAI NAGAR, JUYOe 89 20385BR26V9120\nMARIAPPA LAY OUT, Invoice Date 05-11-2026 16:07:06\nRULE A TAMIL NADU Job Card No 20385-02-RJC-1126-9007\nModel XPULSE 200\nVIN MBLLDLO55MGD01684\nVehicle Reg No TN78AY2220\nMobile No 7004217648 Kms : 48501\nState Code 33 Joyride Expiry Date\nInsurance Expiry Date 26-07-2023\nNext Service Due Date 13-02-2027 (On or Before)\nJ TE 10 pm od SGT Shee; Le 5 me\nS.No. Description of Goods /Services | HSN Code | Billing Total Err 6ST | Total\nEE 5. Bn IR CO | of 28 be Value | Discount] Value | Rate | Amount | Amount\n| GeowimeBartchetadls 5 = 0 0 Te mae ee\nK11113ABFA000S-Scheduled | EE Ee ey pee\n! | Meintonance KIT-20000 Pritts | Paid | 1 | pc) 11047 | 11047 | 0.00 | 11047| 18% | 19.83; 130.00\n12391KRM840S-GASKET HEAD | | ; | | |\n2 [cover 40169340 | Pade 18 1) BCH 46.61 46.61 | 000 | 4661 18% | 8.39] 55.00\n5  SPDMCYLO7SS-HEROXOTIC | | Sod | i | l\n: | PLUS 10W30 SL MA2(1350ML) | 34039900 | Paid | 1.0000} PC 1,271.19 1,271.19 0.00 | 1,271.19} 18% | 228.81! 1,500.00\n| 4 |SPDWC00022S Dresser 1000mi | 34059090 | Paid | 0.0150] PC| 25424 381] 0.00 | 3st] 1e%| ose 450 |\ni i i i i : H i So i i\n5  SPDWC0003S-Premium Wax | 34059090 | Paid | 0.0000] PC (347458 0.01: 0.00 | 001} 18% ! 0.00] 0.01 |\n6 SPDWCO001S-ShampooiSoap | 34029091 | Paid | 0.0010] PC {1,144.07 114 0.00 | 114} 18% | 021] 1.35\n= 20 Total ee oo] aes | 25793] 1,690.86\nOther Parts Details TT RNA ean al\nLabour Details Pia Sl aR Sa a mE\n|202001-REGULAR SERVICE | oonona | boy | To ere) TEST a Sa\nT | (PAID)XPULSE 200 | 998729 Paid | 1 od 480.00 480.00 | 0.00 | 480.00 | 18% 8640) 56840 |\n‘2 1 600004-PPT BY BARDAHL [998729 | Pad |1 i | 22500] 22500! 0.00 | 22500) 18% | 4050! 265.50 |\n| fe i { : ! !\n| 3 frase HEE OLFILTER 1998729 | Pad |1 | | 197.00] 197.00 000 | 197.00} 18% | 3548| 23246 |\n| |407002-COVER CYLINDER | band he | |\n| | 73 008 73 0048 0.00 00! 18% | 13.14; 86.14\n4 HEAD RR) | 998729 | Paid | 1 | | 73.0 pas | |\nABE com em ry Sr A pe ep oe SURO) [BST] 7 Te] te me net (RRS\nTotal = 1 97500] 000! 975.00] | 17550] 115050 |\n| Other Labour Details wa ot if\nBe TT Ee oe Te ae 1 | 0.00 |\nIGST (Parts) @ 18% on Amount 1,432.93 257.93\n4 [=] its [w] IGST (Labour) @ 18% on Amount 975.00 175.50\n' Toll Free: 1800 266 0018 ig\nNet Amount 2,841.36\nEmail: customercare@heromotocorp.com [=r 0\n» Round Off 2 -0.36\nEAT E Po I: Hero cE) 0)\na ip, xf [] 3 fv \\°)\nulna 2,841.00\nEp at (0) ® SCAN THE GR CODE To Invoice Amount Pa Bled a\nbart rg a CHECK RES Total Invoic Gijure 2,841.00\ner Wheels OF YOUR TWO-WHEELER JR abl We S\na % otal Invod® Value N Rs. Two\na] Arr of Trust VISIT: WWWWHEELSOFTRUST.COM T od (rete (A ey\nWO - Hundred Fourty\now a One Only\nNN . Nene\noY net\nTax Payable under Reverse Charge-No 2 For NIDHI MOTORS\nAuthorised Signatory\n"
+    },
+    {
+      "image": "bills/B2.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "Sainsbury's",
+        "date": "26-06-2026",
+        "total": 29.44,
+        "category": "Groceries"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Sainsbury's",
+          "actual": "COLORES CG TE",
+          "correct": false
+        },
+        "date": {
+          "expected": "26-06-2026",
+          "actual": null,
+          "correct": false
+        },
+        "total": {
+          "expected": 29.44,
+          "actual": null,
+          "correct": false
+        },
+        "category": {
+          "expected": "Groceries",
+          "actual": "Groceries",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Currency amount detected.",
+        "Recognized grocery retailer detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 36,
+      "merchant": {
+        "value": "COLORES CG TE",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "total": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": null,
+        "normalizedAmount": null,
+        "code": null,
+        "originalText": null,
+        "confidence": "low",
+        "normalization": "unavailable",
+        "normalizationReason": "no selected payable amount",
+        "reason": "currency cannot be detected without a selected payable candidate"
+      },
+      "category": {
+        "value": "Groceries",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "rawText": "COLORES Cg TE\nhi 0-8 p hn, Na oa\nLoa Jon gw a\nRN 4 a” gr aL 8 |\nv ' 4 4 . Ry am TORRE |\nA { € <4 of ay ay\n§ QQ ol B\nLE . ha\nhey [¥ S RS\nPy 2 4 I\neo dinsbury's i.\ngo> ge we\nR €¢ iy good food for all of us i Mo\nBs “n QUIN HADLETGH ROAD oe v  lge\nhy a B\\ 01473 286660 | OE L bi\n1 fe = =| Sainsburys Superniar kets Lid i JE i\n& 5 1 1 Char ter NOUS Strat | ondory ECIM GHA i ol\nhh Cd ) “wi. 581 nsburys, co, uk lo, a AT\nBh We 6 Vat Number . 660 4548 36 i oR\nSE 0 {ti Sm [a\nDAG KELLYS CORNISH T/6q ; i Bes\n: £4 Ae AN LUCH L7SLT chip £9.23 Bs a i al\ng EE of IH Lh £2.70 LA\nAg 5 SHEETCORN “X2 £1.29 Gl (7\nUWE od 15 BABY GUT TON MUSH £1.20 fr ES\nEon WG JS WHITE 5DLSS GRAPE £2 00 (Em\nED. Y  pLon PUNNET 1KG £2.40 Til J\nhy J | ul\nSUL IE FREE. GF. BRAWN RC FSL £2.50 fige o\nBy EASY GOING SALSA £2.85 re\now P| SE <0/FREEZE MSCLE SPRY £6.00 a AL\nBQ oa PREIS] 2505 £3.25 Ei ES\nfh / 1S RhSPE ky Fee\nCth By 6 | \" £29.44 a i\nESERah ks, ICL. DUE , eg dir\ni NA 10-08 Aer £29.44 CHE\naati © ES [C1 west anankx sr 1759 1 See I\nJ i pl 1] AUTH congel ¥ 042660 ) La, pi 4 i\nSE Be WU, de he\nEE TN CHANGE £0.00 ) ai i i\nPERRY... 68x xxx n rs xnh ka xan An AA ARRARRR En\n3 Srp ie 4° HY NECIAR SUMMARY lo del i\nli i (llffRxx xxxml xox x22803O VOM LE\nBS NTS EARNED Of (29,40 Jo gra\nET REVIOUS POINTS BALANCE 463 Fi\nBRE, bh / POTNTS EARNE Je A\ngm <n NEW POINTS BALANCE 392 Wa\n© i YOUR POINTS CARE, WORTH 11.9 SM\n9\" i wan aw dkxn «ANE I ch 2x x L444 » SERRE i\nbi i ( Check the Nectar app Ur nectar.cou to see Ty All\na bi « arly ‘bois pointszyou might Have col lected, Hale &\ni of gi 174 xxxax For a chance lo win =zxxx : bp\n100,000 Nectar points 4\nTR please tatlllie Hew de Jiu ar E HE\nQ >\" J 6 HUGE: Know. com\n8h 9 IRE pT TT DE\nul § “PLEASE KEEP FOR YOUR RECURUS Ho\nof VUE TSHED TERMS Atlu CONDITIONS. APPLY:\n4 1 7; d\nQE\na] \\ |\nh in) \\ 024)142200 BHU 100% $06215\n<€ . fins] FINAY A\nlo, vo ows0s5 | 1049: eXefl\nii \\ = SOMZZ fi68-\no Te\nN <€ < [hurk you for yaliSelsLry\nNR i\nLJ\nWN 1 © |\n™ hi a\n5\" Qa\n\\ oP \\ h |\nUWE\n"
+    },
+    {
+      "image": "bills/B3.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "New Asian Super Market",
+        "date": "28-09-2026",
+        "total": 40.38,
+        "category": "Groceries"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "New Asian Super Market",
+          "actual": "NEW ASIAN SUPER MARKET",
+          "correct": true
+        },
+        "date": {
+          "expected": "28-09-2026",
+          "actual": "28-09-2026",
+          "correct": true
+        },
+        "total": {
+          "expected": 40.38,
+          "actual": 40.38,
+          "correct": true
+        },
+        "category": {
+          "expected": "Groceries",
+          "actual": "Groceries",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Item or service line details detected.",
+        "Currency amount detected.",
+        "Final total or payable label detected.",
+        "Tax, GST, or payment detail detected.",
+        "Recognized grocery retailer detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 44,
+      "merchant": {
+        "value": "NEW ASIAN SUPER MARKET",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "date": {
+        "value": "28-09-2026",
+        "confidence": "high",
+        "needsReview": false
+      },
+      "total": {
+        "value": 40.38,
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": 40.38,
+        "normalizedAmount": 40.38,
+        "code": "GBP",
+        "originalText": "£40.38",
+        "confidence": "high",
+        "normalization": "certain",
+        "normalizationReason": "one or two trailing digits indicate decimal precision",
+        "reason": "currency identified by an explicit GBP code or symbol"
+      },
+      "category": {
+        "value": "Groceries",
+        "confidence": "high",
+        "needsReview": false
+      },
+      "rawText": "WEL 4\n| LG -\nLL NEW ASIAN SUPER MARKE\n1\n53-51 CARR SIREET\nIPSNICH 1P4 THB\nxX\nLL | Tel: 01473410834\n$ Staff: 22, 1111 10: 2 _\n> Sale Date; 28/09/2026 20:14:18 [3 Fa £\n< fm PRICED RIF TOILE) ames 4 .\nN Nouri tomas BRIA SL 2.5m RE) ER E :\nBN is vs teas 3.33/68 | awe : : A. t\nof Mal NES D0 i okres MERRTS AF oy g i £\n7 star 2 tw 030 oa ! :\n~ J wren 8D Go 206 5.99/08 Tow 3 Rh ie\nN woes] SBI LAMA 1.29/en 3 dw iE 1\nan 1.29/ea | Ly $3 = y :\n2 - WY LENE 0.93/ea Vom i i. s\nRY cus) Fei 394s 0.570 \" Eo\nWN BY con ns 6.899 0.438 LI fora\nTR 6 RSKFOE1IDA 1006 2.8900 [IX FF aon\n- SHOR GINER 6.90A3 0.200 1% gy\n9 gp\na © TOTAL : £40.38 por =\nTOTAL QTY :12 a BF N= wo\n3 TOTAL WEIGHT QTY :).242kg EER aa = Ed\n* CARD £40.38 PE ig)\ng MASTERCARD EE = £3\n£ Auth Code: R2868 Laie 0 = Pr\n\\ Exp Date: 0829 a eB #\nSEN He thod: CONTACTLESS * = i\n» 3 Card: sttsssassssn|5id 2 [53\n- iE 0\n\\ 4 J ounce: £0.00 CORSE\n3 \\ ; FY |\n} 3 RN PRONOTION : £0.48 8 1 | |\n~ £7 : &\ndé gy RATE NET(E) ~~ VAI(E) TOTAL(E) i i= =\nh\\ 00.00% 6.56 0.60 6.58 ¢ TRESS\n3 » lo000x 30.80 0.00 2.80 . rae\n€ rE PD Please download the DD Paints app and scan the 4 pi 83%\nA € § R code to get the points, Valid 14 doy only iE #4\n< 2 Ee\n&< Ela :\n% >\nEX ed Printed On ¢ 28/09/2026 20:14:18\nu 5\n-« Thark you for shoing with us\n< LC y\nWR\n= Sl\nad pr.\n"
+    },
+    {
+      "image": "bills/B4.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "Tesco",
+        "date": "19-10-2026",
+        "total": 18.98,
+        "category": "Groceries"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Tesco",
+          "actual": "ET A RT TE AR",
+          "correct": false
+        },
+        "date": {
+          "expected": "19-10-2026",
+          "actual": "19-10-2026",
+          "correct": true
+        },
+        "total": {
+          "expected": 18.98,
+          "actual": null,
+          "correct": false
+        },
+        "category": {
+          "expected": "Groceries",
+          "actual": "Groceries",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Currency amount detected.",
+        "Recognized grocery retailer detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 48,
+      "merchant": {
+        "value": "ET A RT TE AR",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": "19-10-2026",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "total": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": null,
+        "normalizedAmount": null,
+        "code": null,
+        "originalText": null,
+        "confidence": "low",
+        "normalization": "unavailable",
+        "normalizationReason": "no selected payable amount",
+        "reason": "currency cannot be detected without a selected payable candidate"
+      },
+      "category": {
+        "value": "Groceries",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "rawText": "ET a” RT TE ar |\nNN < NE vm wan 53\ng = ’ he sale bh #8 i. 2 SE =\n“in ase 151 Fg Pris ol a Gas\nRE ETL REET Fd\n2 N : Bn y = 7 8 ES = PE = = ci\nLE sCcO $5 5\nBN TESSO 27\n= Ipswich Extra % =\n= : Any questions please J ror x c\n» SR Nr Members GB 220 4302 31 ==\nA style Yogurt 1K9 £1.70 :\n= i Tel dt Rk Ss FE 5009 Ea =\n- E 1 NCE Dal Yellow 1kg £0.50 ==\nee - £2. . —a\n#9 OW | pocedere Farms Small Apple 6 Pack £0.99 =\nLE 3 1 Rajehgh hale Green Cardamoms 50g £4.00 =: 5\nSav = \\ -£0.80 =\n= BL 1 Tesco Organic Beetroot 450g £2.20 ==\n: Se 1 Tesco British Semi Skimmed Milk £1.65 Sam\nSRE 2.272), 4 Pints == =\n= == | 2 Tesco Tomatoes On The Vine 500g £3.00 ==\n , £1.50 each 5\n7 1 Tesco Carrots 1kg £0.69 = Fs\n» ©. 1 Tesco Green Beans 220g £0.85 a\nfll 1 Tesco Finest Baby Potatoes 750g £1 20 ==\noF Cc £1.00 -£0. Em ar\n«1 Wl 1 1ceco Red Onions Pack 1kg me BE\nWN Sf B Co OR anference pears Pack 610g £1.60 pe es\nfo, Co £1.20 -£0.40 EE Es\nEW soon: 23.23 By\nfF sovinos: DE =\nTE Te Promotions: -£2.15 =\nbh € Colleague Discount: -£2.10 5\n: Tag | ene SE HES Eat\nEy oA: £18.98 EET\noe igs Gf ftcard £18.98 poll\nit: [Ese he\nge L « Clubcard points earned: 18 =\nbh 5 Clubcard points balance: 1,542 =\nCN Em da |\nbe 1) hall 50450750074xxx%0951 !\nfil, k New giftcard balance: £6.22\nCn Te re |\nVEDA AVA AN\nnd i> 5 356D-1THX-WOSF-X5LO0\n5 << Be I\n«¥ he RQ 19/10/2026 18:13 Store: 2748 Checkout: 173\nQC” [ iN Sl\nN Li EE\n=» > 4 f 45 B\n<A iN. i LY. \\\n"
+    },
+    {
+      "image": "bills/B5.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "New Asian Super Market",
+        "date": "10-07-2026",
+        "total": 15.85,
+        "category": "Groceries"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "New Asian Super Market",
+          "actual": "NEW ASIAN SUPER MARKET",
+          "correct": true
+        },
+        "date": {
+          "expected": "10-07-2026",
+          "actual": "10-07-2026",
+          "correct": true
+        },
+        "total": {
+          "expected": 15.85,
+          "actual": 15.85,
+          "correct": true
+        },
+        "category": {
+          "expected": "Groceries",
+          "actual": "Groceries",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Item or service line details detected.",
+        "Currency amount detected.",
+        "Final total or payable label detected.",
+        "Tax, GST, or payment detail detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 41,
+      "merchant": {
+        "value": "NEW ASIAN SUPER MARKET",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": "10-07-2026",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "total": {
+        "value": 15.85,
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": 15.85,
+        "normalizedAmount": 15.85,
+        "code": "GBP",
+        "originalText": "£15.85",
+        "confidence": "high",
+        "normalization": "certain",
+        "normalizationReason": "one or two trailing digits indicate decimal precision",
+        "reason": "currency identified by an explicit GBP code or symbol"
+      },
+      "category": {
+        "value": "Groceries",
+        "confidence": "high",
+        "needsReview": false
+      },
+      "rawText": "3 p : 2\nA § y 5,\nTs v > i £ St\nbh ° od : LN g 5d\nWE 2s “op ACS §\n< \\ NEW ASTAN SUPER MARKI\nT i=\n> 53-61 CARR STREET -\nIPSWICH IP4 1HB i\n\\ € UK ; ¥ Eo -\n- Tel: 01473410934 x CAE\nLe Statf: 11, Till 10+ 1 = S988\nER Sale Late: 10/07/2026 18:51:11 EW\n5 ob ©\nEl ix PRICE(E) IY JOIAL() TRE\n= HooLY 2.999 0.5MM 1.60 : a\nCo IIE 8.99/ka 0.316ks 2.66 FJ a\n3 UGANDA GINGER 6.99/ks 0.7%3 5.54 3 Be \\\nBE GARLIC PACK 7006 2.49/ea (IX #1 FE f bi\n; COLONUT SRT LANKA 1 20/4 3 RENO] Fo ol\n=> SO CURRY LEAVE 0.99/ea 1o0w fix 1\nNN < Voucher - DD Puints Voucher 2.00 a iE . i\n. LB\nli, ed\n= WM orn: £15.85 | 44 be ko\n<I TOTAL GIY +5 ie fe edo\n< pri TOTAL WEIGHT QTY :1.644kg Wes\nSF CE £15.85 gi ee\nRR Sl MASTERCARD TRE\nRall Auth Code: RO208S TE i Se he\n3 hp , NE\n. SS Eo Date: 0429 TEE.\nCl Wl Feinod: CONTACTLESS h ifs Ee\n= Col Card: t3tianreninaag J\nbY h | # Ee\na Rie B in |\nCHANGE £0.00 Re i\nTHM 0\noP oR 3 RETR |\n: a ocr £2.00 4 i - je\nBil 3 REE\nh RATE NCI(E)  VAI(E) 10TAL(E) fH 9 i\n00.005 17.85 0.00 17.85 EEE\n) id aw\na i 14 HE aie Ir\nq er\n>, “I 0 fonts: CEE\n) bh | Today Points: 317 A a a\n3 Available Store Points: 326 i RR\nag - Printed On : 10/07/2026 18:51:11 i RES\nE 3 S\nN % E thank you for shopping with us iy\n3 oo\ney \\ 3\noh) RR\na hin\n& WO 4 Li\nAY\n<< _\n"
+    },
+    {
+      "image": "bills/B6.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "Choice Fashion & Home Outlet",
+        "date": "01-10-2026",
+        "total": 13.5,
+        "category": "Shopping"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Choice Fashion & Home Outlet",
+          "actual": "SE FASHION & HOME OUTLET",
+          "correct": false
+        },
+        "date": {
+          "expected": "01-10-2026",
+          "actual": "01-10-2026",
+          "correct": true
+        },
+        "total": {
+          "expected": 13.5,
+          "actual": 13.5,
+          "correct": true
+        },
+        "category": {
+          "expected": "Shopping",
+          "actual": "Shopping",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Invoice, bill, or receipt header detected.",
+        "Currency amount detected.",
+        "Final total or payable label detected.",
+        "Tax, GST, or payment detail detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 45,
+      "merchant": {
+        "value": "SE FASHION & HOME OUTLET",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": "01-10-2026",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "total": {
+        "value": 13.5,
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": 13.5,
+        "normalizedAmount": 13.5,
+        "code": "GBP",
+        "originalText": "GBP 13.50",
+        "confidence": "high",
+        "normalization": "certain",
+        "normalizationReason": "one or two trailing digits indicate decimal precision",
+        "reason": "currency identified by an explicit GBP code or symbol"
+      },
+      "category": {
+        "value": "Shopping",
+        "confidence": "high",
+        "needsReview": false
+      },
+      "rawText": "LA choice £ |\n= sl INN = 35\nSE FASHION & HOME OUTLET : =\nClacton 01 Sea C015 ATL = i\n= TEL : 01255 611699 ; b\n< Description Total & I\nFB 1x BLU FAIRISLE KNITTED MEDIUM 13.50 EEE\nANY 50899427040 ce\nhi Junpers =\n= lotal 1 item 13.50 a\n% fg: Payment om\nBy emma mm Tee ARs ee\nNY Mastercard 13.50 ie\na CUSTOMER RECEP) AR\naa CHOICE - CLACTON ~~ li fi\n=\" CLACTON FACTORY OUTLET bo\n8 STEPHENSON ROAD WEST — se\nBY fr TON-ON-SEA, ESSEX , C015 a\nbLW  G1/10/2026 17:40; 14 Hoa\nSW RECEIPT K0.:10012] . =\n3 MID: XXX27352 TID:XXXX1971 eae\n3 AID: A0DD0000041010 ecle\n“BE MASTERCARD el\nM000 XX XKKX 1637 leas\n7 PAN SEQ NO. :00 EE\n3 SALE (BP13.50 SEE\na TOTAL GBP 13.50 ra\nCi PLEASE DEBIT MY ACCOUNT sam\ni NO CARDHOLDER VERTF [EAT LON Ea, id\n? CONTACTLESS GN\nbh PLEASE KEEP THIS REGE(PT FOR 28\n3 YOUR RECORDS Ei\nER AUTH CODE :R00924 Bt\nal B VAT umber © 395031552\np Tax Amun Rate iB Net\nJ Ll A 2% Nile\nnn? You have bger Elved by Katy 4\n. HITUY\n0 Maa\nMATa ag\nfh 4 00mg Hy {\n« pa ote iggy © 45 80k\n] 150 01/10/26 17:4 store Tip I\nU0 ggg edshier\n"
+    },
+    {
+      "image": "bills/B7.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "Sainsbury's",
+        "date": "03-11-2026",
+        "total": 12.2,
+        "category": "Groceries"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "Sainsbury's",
+          "actual": "IE (GL SET ME .",
+          "correct": false
+        },
+        "date": {
+          "expected": "03-11-2026",
+          "actual": null,
+          "correct": false
+        },
+        "total": {
+          "expected": 12.2,
+          "actual": null,
+          "correct": false
+        },
+        "category": {
+          "expected": "Groceries",
+          "actual": "Groceries",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Currency amount detected.",
+        "Recognized grocery retailer detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 38,
+      "merchant": {
+        "value": "IE (GL SET ME .",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "total": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": null,
+        "normalizedAmount": null,
+        "code": null,
+        "originalText": null,
+        "confidence": "low",
+        "normalization": "unavailable",
+        "normalizationReason": "no selected payable amount",
+        "reason": "currency cannot be detected without a selected payable candidate"
+      },
+      "category": {
+        "value": "Groceries",
+        "confidence": "high",
+        "needsReview": false
+      },
+      "rawText": "if\nie (Gl SET ME |.\nWS § om y Wo\n? TTR] ed NT ON\nSEinsbury’s Jig\nA ai I\npe nod food for all of us RE\nX H\\D_EIGH ROAD Cobian\nWN 11473 286660 i! bof. | diy OF\n] . i\nBn 33 ¢ JAN /'s Supermarkets Ltd Eo pee\nFo 9 L13Y 2 w0ie Street London ECIM GHA i pe te\na5 IW. sainsburys co, uk War an\nrl = 13. Husbar : 660 £548 35 mone\n5 - gil\n4 sku: wv sks 5 £5.00 Ld Jil\nhb | SKU: 3:25 1A .LOWEEN £3.60 i\n1 SKU: 525 HHA LOWEN £3.60 I il i\nBd a\n<P 3 3 BAVDI UE £12.20 LB a\nhi i GIST DAD £12.20 Bh in i\n; HS [3] ¢remx ox enxxuxnB35d A\n\\ AJTA DDE: 470567 bi\n| il\nbe : ga a\nfh CE\nap te | CAI £0.00 LL\n[\" Re A XHURK CLF COIR CRRXRK NKR KA KKKR CRA KXKRKKK iz nih by\nb Uy 4! ESTAR SUMMARY fleas i\n[C] wees eon axex xuxB03% Ee\ni POINTS TRIED ON £12.20 / WEEE\ncane | PREVIDJS POINTS 3ALANCE 105 a ee a\nel POINTS Zu ID) 12 ard le\nEW NEY POLIS LCE wo Ee\nWy YOUR ICT 5 AR: HORTH £0.58 = [TUITE\ni [Op ———— (|\n0] Check (1) N»>:a® app or nectar.com to see oe) J\nih BI any boys points you might have collected. i Jet i Ja\nvr Ci | ii SE\nqu v x¢oe lop) chance to win wxaxx ihe Fo\ny bb i 113.00 Nectar points he\nBs 3) 303 Tal] us how we did at Tole a\nal ert ice-know. con EL\nbo a CURR RARE ANKE A RRKRA KA Vee\ngn fads\nHE > A5E KIE2 FOR YOUR RECORDS J.\ni bb Kf PUB.[5 12) EM5 AND CONDITIONS APPLY Co\nTh Wirth |\n@ 1 fri\nN\\ 152304 2 2900051126 or\nbp 1.2) 20:18:50 03N0V2026\nJ D2) RES :\nGn /\nN [1314 you for your vis|t,\n\\€\n"
+    },
+    {
+      "image": "bills/B8.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "New Asian Super Market",
+        "date": "08-10-2026",
+        "total": 66.26,
+        "category": "Groceries"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "New Asian Super Market",
+          "actual": "& NEW ASIAN SUEY MA",
+          "correct": false
+        },
+        "date": {
+          "expected": "08-10-2026",
+          "actual": "08-10-2026",
+          "correct": true
+        },
+        "total": {
+          "expected": 66.26,
+          "actual": null,
+          "correct": false
+        },
+        "category": {
+          "expected": "Groceries",
+          "actual": "Groceries",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Item or service line details detected.",
+        "Currency amount detected.",
+        "Final total or payable label detected.",
+        "Tax, GST, or payment detail detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 39,
+      "merchant": {
+        "value": "& NEW ASIAN SUEY MA",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": "08-10-2026",
+        "confidence": "high",
+        "needsReview": false
+      },
+      "total": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": null,
+        "normalizedAmount": null,
+        "code": null,
+        "originalText": null,
+        "confidence": "low",
+        "normalization": "unavailable",
+        "normalizationReason": "no selected payable amount",
+        "reason": "currency cannot be detected without a selected payable candidate"
+      },
+      "category": {
+        "value": "Groceries",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "rawText": "lu —. Cm. 0 ABE Uy {\n3 X ’ - / E>,\n; »\n& Ss sur RIL\n& $< NEW ASIAN SUEY MA /\n1 53-61 CARR STREET\n: 1F5K.H IP4 1B\n1  < ¢ ” 9\n\\ §\nZC Tel: 01473410334 -\n\\ 1\ni. \\ > 2 Staff; 11, TH 10; 9, E WF\n\\ Sale Date: 08/10/2026 20:14.43 yim |\niB < 1x PRICEC. QTY 1016L(E) i 3 oy\nA @ 3 ou IT 690s 0.5300 LI ¥ 3\n3 > SWLLOI i108 5.990 0518s 3.0) f ot\nGO 1, p61 nICELLL Lies 1 1m § ge\n\\ & Coun SRE LANK 1.2906 3 am Gaal\n<< < A ios 230k 0m 068 =o :\n& \\ BU ex t30he 015s 10 iy 58 8\n§ SN cco ro sites 1 3% SE oR a\nES b Pt HEERA RAGE FLOOR 1KG 1.99/ea [IRE] ETA 1\nn FLAT BERS 0.9908 0.3609 3.42 Jie aR\noF BR oc rx Sane REL bi {Ye\n& 4 Shankar Saaba Rave 1K 2.59/00 125 9 $e i\nAWN 3 I/F BEARVARD NILLET 5006 2.28/e8 [I *-] KF: 5 oA ek\nJ \\ > SK SRUMONDT DIL SL 19.990 [CY] Beales oF FF JE\n- ASUINS GRR WRROU-1S00 59h 1 18 Tgp | er\nie NN ASUS MASALA KAGALAL 150 1.59/ee [REY I AF a\n ¢ nous roo mass) 19 1 1% = Wi :\n. TQ ASHING KARR SEVIS06 1.59/e8 Ls bd er 5 3\nEh 4 ay 2 for £2.50 13% 5 o = 3\nA p FLUKA FFA LITRE 45 3.09000 1 3.68 gy EL =\nel \\ gl nl KOT paRER 37% 3.19/e0 Ios Es a: Ee\nAX 3 SH PERT BAR 10068 [BY BE 3\nBh \\ Fa F\nAT > WM 10TAL - £66.26 Lay os J\npi PPR TOTAL O1Y 117 vs S\np \\ ofl] 07AL WIG ary 1.846 |\n¥ \\ £66.26 | 2\nBW MASTERCARD £5 3 §\nRE - ER Auth Code: RO3I66 = s §\nF € a Exp Date: 0829 : BE Ee. = | y\nSE , [NW Method: CONTACTLESS x3 = Pi\n[ris Card: #kbersriase]633 Ey FE\ni 3 pr CHANGE £0.00 : 4 Fi =\nE: 3 3 : i\nWN PROOTION © £1.36 = Tos\n\\ - pI NET(E) VATE) TOTAL(E) A f\n: « ; 56.03 0.00 56,09\n3 00 00% 6.58 0.00 6.58 a -\na & 05.00% 3.42 0.17 3.59 5 SSR\nX & J\naN » Ball Please download the DO Points app and scan the N { |:\nNs R code to get the points, Yalid 14 days only. $ sa\n<<< 4 iE EE 5\n< 3 C5 wai z &r\n- \\ RET\n\\ rr Ce\n\"NN | [=] fires .\naA <€ . :\nCw NC\n\\ ~ +} Faiated C4 4 08/10/2026 701 14.43\n- N BO \"rk vou (or shoomng win ue\n"
+    },
+    {
+      "image": "bills/B9.JPG",
+      "expectedClass": "bill",
+      "predictedClass": "bill",
+      "classificationCorrect": true,
+      "expectedFields": {
+        "merchant": "New Asian Super Market",
+        "date": "20-07-2026",
+        "total": 63.93,
+        "category": "Groceries"
+      },
+      "fieldEvaluation": {
+        "merchant": {
+          "expected": "New Asian Super Market",
+          "actual": "EH R.A",
+          "correct": false
+        },
+        "date": {
+          "expected": "20-07-2026",
+          "actual": "20-07-2026",
+          "correct": true
+        },
+        "total": {
+          "expected": 63.93,
+          "actual": 63.93,
+          "correct": true
+        },
+        "category": {
+          "expected": "Groceries",
+          "actual": "Groceries",
+          "correct": true
+        }
+      },
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Item or service line details detected.",
+        "Currency amount detected.",
+        "Final total or payable label detected.",
+        "Tax, GST, or payment detail detected.",
+        "Independent transaction signals support a bill."
+      ],
+      "ocrConfidence": 42,
+      "merchant": {
+        "value": "EH R.A",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": "20-07-2026",
+        "confidence": "high",
+        "needsReview": false
+      },
+      "total": {
+        "value": 63.93,
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": 63.93,
+        "normalizedAmount": 63.93,
+        "code": "GBP",
+        "originalText": "£63.93",
+        "confidence": "high",
+        "normalization": "certain",
+        "normalizationReason": "one or two trailing digits indicate decimal precision",
+        "reason": "currency identified by an explicit GBP code or symbol"
+      },
+      "category": {
+        "value": "Groceries",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "rawText": "Eh § R.A =\nNW a Sa 3\n“ul Ts Sa X Af\nfice y\nol By\nAh CS 9] |\nP= v NEW ASIAN SUPER MARK 4\ni T\nIR 53-61 CARR STREET :\nEL a 1PSHICH 1P4 118\nam) ER, [1\n(FE\nmy Tel: 01473410334 “EZ\n\\J A | Staff: 11, Till 10: 1 /& j\nTN © Sale Date: 20/07/2026 21:12:35 4 Z\nAN te =\nNE BE 11x PRICED QIY OAL (5) L\ncla PN 15s cucu Choon 500 3 28/en vom\n\\ _— BY cin ons wt 2 EE yy i\nTE RO 12 100k bal 2x6 5.39/ea I 4\nBc | Shanker Seba Rava 1Ky 5.59/e0 [I] ia\nAR x ind Sorats 4.99/e | oa ro\nET 1 : i y \" F\n: rE RR Kis JRGGCRY PONDER 1.28/ea 1am A\nKi 3 LI 29m 1 2m & ky\nho woot 2909 00s 2.4 3 p14\na URRY LEAVE 0.99/e0 108 C5\nSRE BT Li eens .93A9 0.4089 165 7\nRi 3 8 0264 0E1100 1006 2.59/68 [REX] hoa\nUB Rl \\ RU (LOT SRI Lakh 1.23/08 3 aw pd fd\n\\ AER ruil) PARAL 6.9949 0641 AW F Ey J\nA © : IND LAN. OKRA 65.993 0.606ks 4.24 He)\n2) ¢ gh KARELR GREEK 0.994 05120 338 by\n. 4 SALOON TON 6i8y/ka 0 B%ka 6.70 y & ~\n- h TOTAL = £63.93 & 7\nTOTAL QTY :15 A\n¥ » TOTAL WEIGH] QTY :3.884kg oy A\n. CARD : £63.93 . Yo\n; BA fl MASTERCARD Ke\nTm ¢ RS Auth Code: R0%72 i\na B¥ Exp Date: 0829\n\\ Method: CONTACTLESS A\n“B Card: d4erkedveras|633 4\n£5 ) ESD b\nJ \\§ : T CHANGE £0.00\nTB 3 ¢ i\nREN RATE NET(E)  VAI(E) TOTAL (£) rl\n©» 00.008 13.27 0.00 13.2 La\n= 00.00% 47.01 0,00 47.07 Bt:\n53 05.00% 3.42 0.17 3.59 mo\n3 Ea\nJ 1 RE\nSpey\n00 Points: fri\nToddy Points: 1127 en\nAvailable Store Ponts: 453 av\nAvailable Voucher: £) or\nPrinted On = 20/07/2026 21:12:35\nThank you for shopotog with us\nis ee\n| & i\n"
+    },
+    {
+      "image": "non-bills/NB1.JPG",
+      "expectedClass": "not_bill",
+      "predictedClass": "not_bill",
+      "classificationCorrect": true,
+      "expectedFields": {},
+      "fieldEvaluation": {},
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Course schedule pattern detected.",
+        "Document contains strong non-bill signals."
+      ],
+      "ocrConfidence": 77,
+      "merchant": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "total": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": null,
+        "normalizedAmount": null,
+        "code": null,
+        "originalText": null,
+        "confidence": "low",
+        "normalization": "unavailable",
+        "normalizationReason": "no selected payable amount",
+        "reason": "currency cannot be detected without a selected payable candidate"
+      },
+      "category": {
+        "value": "Other",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "rawText": "18 EC25CO06 - Electro Magnetic Fields and Tr...\nNov  10:00AMto1:00 PM\n\n23 MA25C11- Probability, Statistical and Ran...\nNov  10:00AMto1:00 PM\n\n27 EC25CO05 : Electronic Circuits and Analysis\nNov  10:00AMto1:00 PM\n\n30 EC25CO04- Signals and Systems\n\nNov  10:00AMto1:00 PM\n\n2 EC25CO07 - Digital System Design\n\nDec 10:00 AM to 1:00 PM\n"
+    },
+    {
+      "image": "non-bills/NB2.jpg",
+      "expectedClass": "not_bill",
+      "predictedClass": "uncertain",
+      "classificationCorrect": false,
+      "expectedFields": {},
+      "fieldEvaluation": {},
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "No clear bill or non-bill OCR signals were detected."
+      ],
+      "ocrConfidence": 31,
+      "merchant": {
+        "value": "SAND",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "total": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": null,
+        "normalizedAmount": null,
+        "code": null,
+        "originalText": null,
+        "confidence": "low",
+        "normalization": "unavailable",
+        "normalizationReason": "no selected payable amount",
+        "reason": "currency cannot be detected without a selected payable candidate"
+      },
+      "category": {
+        "value": "Other",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "rawText": "_\nSand\n~\nly A\nal a i”\nes.\nww &\n\n§ ’\n\n2 = Th TIEN - i =\ned A ¢ rd\n2 — 5 . i\ni CXS Ta — 8 Je——== \\ 7 > =\nee iba — \\ = > a\n=i ’3- EE Al Ee —— = =o Q A 3 27 4\n- ie ) | \\ vy \\ ro grr\n— or ea . :\n- 2 3 | \\ i ~~  .\nBa] h § = !\n- i -\n7 z ) Py *\nhe,\npes\na | hh, WW!\n’\nGe\nha ©\nA\n"
+    },
+    {
+      "image": "non-bills/NB3.jpg",
+      "expectedClass": "not_bill",
+      "predictedClass": "not_bill",
+      "classificationCorrect": true,
+      "expectedFields": {},
+      "fieldEvaluation": {},
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Currency amount detected.",
+        "Promotional price-list wording detected without transaction evidence.",
+        "Document contains strong non-bill signals."
+      ],
+      "ocrConfidence": 31,
+      "merchant": {
+        "value": "LOS REAL TENT . I AN DN",
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "date": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "total": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": null,
+        "normalizedAmount": null,
+        "code": null,
+        "originalText": null,
+        "confidence": "low",
+        "normalization": "unavailable",
+        "normalizationReason": "no selected payable amount",
+        "reason": "currency cannot be detected without a selected payable candidate"
+      },
+      "category": {
+        "value": "Other",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "rawText": "1 [vie\nay El ge. | BPR, £287\nLos: [REAL TENT . i an DN]\n2 | | LEX 3 § h (73 piv. 4 vA Ne AB \\ } °° mm\njae | | _g Ss ul dT a D 4 » BY V4 |\na | SAS ESR 2 4 28 LV ar a a8 4 pid\noF | i Rl, WE a7, J A\" 4 V EPR\nrad N | 24k gl 2 a.?2. @ ¢' 4 fs 7 4\nsd | | Ell » 4 4 AN SH @ ¢ CdR 5\nwolf | Qa? LY TaN i)\nEe Wildl gr 2% Al\nLys 4 | ; Sel. $s / hy op\nRT) : REN i oh\n) S py TET wo Nd —~\nPit Lh \\ SE Rp ta f\nPANG) ’ | ei j\nia /} \\ J y \\ - A X / BNL A Sad / Ps | ~—\nYe Coe S07 feet | BE. —\nYH TL ie HEP gE —\nA 1 J { Pas 7) } H r | —\nth ; : Nh 1181 A\na A SAN TBR SET SUA AER i Il 3 oN\nEE — i —— Ps CHETAN SUT Fd ~— / )\nSe Shi aR BETTE =| | 5\nRe ae 0 1 B\nBel a SiR pe : 3\npee a, Ae SEER & TO (I\n~ N oF - yt AEE Redd he opie Seer 34 3 AA\nDAR TL RETINA AR eee: TM VA\n» “% 1 NR on A NB] tare A AN 3 LS {\n‘. EY Sra Le a 2 oh A ie J P= I |\nSH J SER, OR da $0 Ths ray ERE i Pee ee el\na ONE : eine\noe ® SE | S——— ————— ——\n§ > = —\n- ° =\n2 [) 0 O ® ¢ TT\n\\ « Te ° = vv ° eh i oH =\nGER se i =\nce=SE un EC \"\n| seEEEhoes ok\nRee E\nwu 1 : i 3\n\\ HENRY SBARBER E |\n; 2 FL QV 2 RB Eo Ga i ; TC —r\n4 Od [ 75) oi oo 2 we CppEMIUN eroomine AES © 1\n: © appy [TAY ha SREMIUM a AEE y 3) ES 1 J He? fo (1) RN 13 i + ed\n! : BO We 1c LF Tl . =\naL or rvs AREER. PACKAGES y jh CV SBAREER ; |e.\nUNISEX saL00N  (\\] fsx sALO0% 3 h / ad - Pr 2\nSmad Se Le 8 RB .. ) TTA\nHB STARTE! [~) aasicBead 10 RE 5 NS. Se\n\\WOMENS BEAUTY COMBOS 30 [AE\n; : (0) E ave 0 CONFIDENCE . SABLE 2 369 Fp ose\n; CARE ° Ww 4 .\n/ ; / fd /, La ¥ scr \\ ; * :\nHair Cu (A 3 e. A 5 GROOMING Q gas Bed Te ZoE8\n/ GLOW DG cc E 4 V— Re \"2999 a ee > yr % / ; NTR\n> - - [3 ve 4 Jo EAN + Q\n7A 599 = : UREN (A\n% J 21,597 3 N ns = ance HC | (Nn NOR:\n; g = FEET GLAM ’ 2 © » H % # ead TOM iY &A \\ 0)\n* ht ~ #2 HANDS 8 Neire + GEL pOLEH \"7 Manicure Sell \\Y J » up FRET 9 Boe aie Wash > f | Log ANY Ny.\nA e010\" 9 3 Gel Polish : : 3 3 9 ® MRE De | 54 Y.-L \\\\\\E BY\n/ 72,09 —7- Wl 149° SI\nZ i ¥% part © A D 4 —~ 2 ro ow COON\n6 [3 ~ |\n’ H 8 GLO ee PR Ah _- FLL © paar Sh N\nRA Ho ar cyt” [ Facial v' fo — /, ht d one B5° e *\nV., 22,799 ad REA Te y &\ns & 7 gf pe ¥% aie Ot 4 p~ ha 1 ! % ance VAR 4 y= J =\nZhe + Uk A Ny ~ g TO ) A —\nWo is wn 4 5 EADY bo [) Fac! V A > Ne ee NATURE Q a fo YY =\npr on RTS /. pART on Ee ANICURE © Vv ee a =i B 200MIN 8 re ano -\nLh LN ots WAR CYT” 9 ? Gel PO\" = — E 1 = [o) * ©\n78 $200k 4 = ~2\\ Ne: 3 ced?\n5 7 3 i ) 2,99 % air v be _ 3 // 72,49 & S\nse 7 a .\nro =n Ad WN 0)\nil =e su a\nW \\ COMP Cvices me : 7 & | ono\n7 - fsa W Cg vv WIENCE >\n7 i AL A 9 ps NI PLT AMEE\nHE (08 a 74 99 é ht weg 2\nrs a | £ ¥\nhe fy TO \"4 ; br? Ea \\ |\n(oP Fr RRL Ne ; : a8 = \\ \\.\nx ins ; re “i £2 a) A i | 18\n4x Ee RA 88 1% A A\n5 fa Te Pt z é 4 §\naa 1K : : \\\n¥ as e glen 3 3 dg : FL Li \\!\nyar. ! x jon Rr ; KB\nee # x ; | \\\n"
+    },
+    {
+      "image": "non-bills/NB4.jpg",
+      "expectedClass": "not_bill",
+      "predictedClass": "uncertain",
+      "classificationCorrect": false,
+      "expectedFields": {},
+      "fieldEvaluation": {},
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "No clear bill or non-bill OCR signals were detected."
+      ],
+      "ocrConfidence": 35,
+      "merchant": {
+        "value": "LY RE IIN -",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "total": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": null,
+        "normalizedAmount": null,
+        "code": null,
+        "originalText": null,
+        "confidence": "low",
+        "normalization": "unavailable",
+        "normalizationReason": "no selected payable amount",
+        "reason": "currency cannot be detected without a selected payable candidate"
+      },
+      "category": {
+        "value": "Other",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "rawText": "3 rs\n| —\nLy rE [ iin —-\n. | :\n& (\nral & pe | |\nFg Jal |\nwr i\ng ££\n| AY :\nE. | bh\nRE - | x / 4\n. k, | 4 1 * (ry |\na “4 > ol y [5\ngo - A i ae : i Obie\na's - & | |\n- & SE i\nry » ) hy HA -\n% B\n\\4\nA\n“re \"\n1)\ner Ror— \\\n"
+    },
+    {
+      "image": "non-bills/NB5.jpg",
+      "expectedClass": "not_bill",
+      "predictedClass": "not_bill",
+      "classificationCorrect": true,
+      "expectedFields": {},
+      "fieldEvaluation": {},
+      "groundTruthNote": null,
+      "classificationReasons": [
+        "Currency amount detected.",
+        "Product-label wording detected without transaction evidence.",
+        "Document contains strong non-bill signals."
+      ],
+      "ocrConfidence": 24,
+      "merchant": {
+        "value": "FO XE",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "date": {
+        "value": null,
+        "confidence": "low",
+        "needsReview": true
+      },
+      "total": {
+        "value": 7,
+        "confidence": "medium",
+        "needsReview": true
+      },
+      "currency": {
+        "selectedAmount": 7,
+        "normalizedAmount": 7,
+        "code": null,
+        "originalText": "7",
+        "confidence": "low",
+        "normalization": "certain",
+        "normalizationReason": "amount contains no separators",
+        "reason": "no reliable currency indicator on the selected payable candidate"
+      },
+      "category": {
+        "value": "Other",
+        "confidence": "low",
+        "needsReview": true
+      },
+      "rawText": "fo Xe\naR\nrea Oe Se\nsae == Cremona\npoe an daeaas an oe\n5 Een Ett SSS pea FETs A Angee\nee ERS = AREER fat Ap RRR s\n= & — a Eee Hee\nZe = SRSA ee Xi eae To\ncd EF A Eameny - Jn SEE SERRA LA\nZa Es EE i = EE EEE Shae Ee\na rae . Z Se §\nse Saas — Re . oat §\nSEE SEE FREER 2 a RE Ie = BEE SEER Re Aas §\n= SE = - Fa Re g\n2 RET pr SAESaT Ea amt i Sma Shas eR ey oy Ed\n= a = = EEE RT Ji\na SEA . 2 = His Soha Hi\n= a — 2 = —— — i\nEr SE ad Same = B\n: oe = bk SEEe Bs |\n2 GE pe A ea Eh = | g\n: > - >» i i\n> = RF\\D Banoo = =\n= > aE ea _\nZe A om Se = En Ee\na ek En i\n= TROUSERS a aaa Gia = |\n= Se Si SEE AEE! 3\na 7 $2 = & a Iho ER §\n7 Re ee €or i i\nrs Tiss ee 3 EERE Ji\n; SA PEE RR Sea [55\nTAA aaa Sa Re SAE 3\nAAA, BREN, ERE We SL HED = . 2\n; : iz 5 Pend a ae i\n7 BI Sen FE Canina 2d\nSe 2% JTROAT-01:3¢ EE ie bo\n7% A 2 Sal Rg 4 aaa 5 fd\nPEER BP TERY Ra fi A Widens Fd\nEL TR SE Mo J\nAafd Sr SII TA oh a Se ESRparrs I c\ni i =a SR  &\nGi di ; Si FEY Sede ie &\nAs Fi 80902536220 ae A\nRs Sea Sa\nFEI PE 5 Gi od yo 4 .\nCHI EE 7 wanufactur®® and warketed DY Loe wi Ey J, i Zi\nRE Sri, SNITCH apparels put. Ltd: Ca wn Boe | 7 Bh 7\ned watigena™!| a Lata fae\n7 i nat ar - 50006 5s eR BR\nIEE HT, AGREE SEER vo ie\nBE 7 organ ee EE je\n77 0 i For supp? 91 364430800 SAE SET AS er\ndri 27 wh On) ; C EAR PEA ir ¢\nRI LTR SEHK\nas WADE IN NDIA, THE WORE ong RI\n29 rs a 7? aR\n: ee =x Lai,\niss MRP £4 1 599 00 a ”\n(ine. of all taxes) Ba AEE\n: =\nFr\n1 ror 7\nAy\nPid\n"
+    }
+  ]
+}

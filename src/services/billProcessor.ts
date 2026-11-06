@@ -37,7 +37,10 @@ export async function processBillImage(
       originalDimensions
     );
 
-    const classification = classifyBillText(ocrResult.primaryFullPage.text);
+    const classificationText = ocrResult.passes
+      .map((pass) => pass.text)
+      .join("\n");
+    const classification = classifyBillText(classificationText);
     onProgress?.(100);
 
     if (classification.status === "not_bill") {
@@ -53,22 +56,9 @@ export async function processBillImage(
     }
 
     const billData = extractBillData(ocrResult);
-
-    // Classification and extraction are separate heuristics. Do not expose a
-    // saveable receipt form unless both agree that transaction evidence exists.
-    if (!billData.isBill) {
-      return {
-        success: false,
-        error: "We couldn't confirm this image contains a bill or receipt. Try a clearer, full-frame photo.",
-        data: null,
-        ocrConfidence: ocrResult.confidence,
-        classification: {
-          status: "uncertain",
-          reasons: ["Receipt classifier and field extractor disagreed."],
-        },
-        ocrEvidence: ocrResult,
-      };
-    }
+    // A strong document classification can still be valid when OCR misses a
+    // date or amount. Keep the image reviewable and let the user fill gaps.
+    billData.isBill = classification.status === "bill";
 
     return {
       success: classification.status === "bill",

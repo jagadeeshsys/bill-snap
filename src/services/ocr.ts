@@ -1,9 +1,11 @@
 import { createWorker, PSM } from "tesseract.js";
+import { classifyBillText } from "./billClassifier";
 import workerPath from "tesseract.js/dist/worker.min.js?url";
 import coreScriptPath from "tesseract.js-core/tesseract-core-simd-lstm.wasm.js?url";
 import "tesseract.js-core/tesseract-core-simd-lstm.wasm?url";
 import engLanguageDataPath from "@tesseract.js-data/eng/4.0.0/eng.traineddata.gz?url";
 import { createGrayscaleContrastImage } from "./image";
+import { extractBillData } from "./extractor";
 import {
   captureOptionalOCRPass,
   combineOCRPasses,
@@ -33,10 +35,20 @@ const workerManager = createRetryablePromise(() =>
 );
 const enqueueWorkerOperation = createPromiseQueue();
 const HEADER_REGION = {
-  left: 0.43,
-  top: 0.08,
-  width: 0.55,
-  height: 0.34,
+  // Receipt logos are not reliably centered: some sit on either edge, while
+  // invoices often place the merchant name across the full page width.
+  left: 0.03,
+  top: 0.02,
+  width: 0.94,
+  height: 0.4,
+} as const;
+const TOTAL_REGION = {
+  // Totals on long receipts are often printed near the middle, before a long
+  // payment/loyalty footer. Include both the total row and footer candidates.
+  left: 0.04,
+  top: 0.3,
+  width: 0.92,
+  height: 0.66,
 } as const;
 
 async function getWorker() {
@@ -70,6 +82,72 @@ async function recognizePass(
   });
 }
 
+async function recognizeRegion(
+  bitmap: ImageBitmap,
+  imageWidth: number,
+  imageHeight: number,
+  source: OCRPassResult["source"],
+  region: { left: number; top: number; width: number; height: number }
+): Promise<OCRPassResult> {
+  const normalizedRegion = {
+    ...region,
+    coordinateSpace: "normalized" as const,
+  };
+  const cropX = Math.floor(imageWidth * region.left);
+  const cropY = Math.floor(imageHeight * region.top);
+  const cropWidth = Math.max(1, Math.floor(imageWidth * region.width));
+  const cropHeight = Math.max(1, Math.floor(imageHeight * region.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = cropWidth * 2;
+  canvas.height = cropHeight * 2;
+
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Unable to create the region OCR canvas.");
+
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(
+    bitmap,
+    cropX,
+    cropY,
+    cropWidth,
+    cropHeight,
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  const cropBlob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob(resolve, "image/png");
+  });
+  if (!cropBlob) throw new Error("Unable to encode the region OCR image.");
+
+  return recognizePass(cropBlob, {
+    source,
+    mode: PSM.SPARSE_TEXT,
+    region: normalizedRegion,
+    width: canvas.width,
+    height: canvas.height,
+  });
+}
+
+function shouldRunFieldRecovery(
+  passes: OCRPassResult[],
+  failures: OCRPassFailure[]
+): boolean {
+  const combined = combineOCRPasses(passes, failures);
+  const classification = classifyBillText(
+    combined.passes.map((pass) => pass.text).join("\n")
+  );
+  if (classification.status !== "bill") return false;
+
+  const fields = extractBillData(combined);
+  return [fields.merchant, fields.date, fields.total].some(
+    (field) => field.value === null || (field.needsReview && field.confidence === "low")
+  );
+}
+
 /**
  * Runs a primary full-page pass, a small header crop, and selective
  * comparison passes when the primary OCR result is weak.
@@ -97,63 +175,41 @@ export async function extractTextFromImage(
     );
     onProgress?.(35);
 
-    const headerRegion = {
-      ...HEADER_REGION,
-      coordinateSpace: "normalized" as const,
-    };
     const headerPass = await captureOptionalOCRPass(
       "processed-header-region",
-      headerRegion,
+      { ...HEADER_REGION, coordinateSpace: "normalized" },
       async () => {
-      const cropX = Math.floor(imageWidth * HEADER_REGION.left);
-      const cropY = Math.floor(imageHeight * HEADER_REGION.top);
-      const cropWidth = Math.max(1, Math.floor(imageWidth * HEADER_REGION.width));
-      const cropHeight = Math.max(1, Math.floor(imageHeight * HEADER_REGION.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = cropWidth * 2;
-      canvas.height = cropHeight * 2;
-
-      const context = canvas.getContext("2d");
-      if (!context) {
-        throw new Error("Unable to create the header-region OCR canvas.");
-      }
-
-      context.imageSmoothingEnabled = true;
-      context.imageSmoothingQuality = "high";
-      context.drawImage(
-        bitmap,
-        cropX,
-        cropY,
-        cropWidth,
-        cropHeight,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-      );
-
-      const cropBlob = await new Promise<Blob | null>((resolve) => {
-        canvas.toBlob(resolve, "image/png");
-      });
-      if (!cropBlob) {
-        throw new Error("Unable to encode the header-region OCR image.");
-      }
-
-      return recognizePass(cropBlob, {
-        source: "processed-header-region",
-        mode: PSM.SPARSE_TEXT,
-        region: headerRegion,
-        width: canvas.width,
-        height: canvas.height,
-      });
+        return recognizeRegion(
+          bitmap,
+          imageWidth,
+          imageHeight,
+          "processed-header-region",
+          HEADER_REGION
+        );
       },
       failures
     );
     if (headerPass) passes.push(headerPass);
 
+    const totalPass = await captureOptionalOCRPass(
+      "processed-total-region",
+      { ...TOTAL_REGION, coordinateSpace: "normalized" },
+      async () =>
+        recognizeRegion(
+          bitmap,
+          imageWidth,
+          imageHeight,
+          "processed-total-region",
+          TOTAL_REGION
+        ),
+      failures
+    );
+    if (totalPass) passes.push(totalPass);
+
     onProgress?.(55);
 
-    if (originalImage && shouldRunOCRComparison(passes[0])) {
+    const needsFieldRecovery = shouldRunFieldRecovery(passes, failures);
+    if (originalImage && (shouldRunOCRComparison(passes[0]) || needsFieldRecovery)) {
       const originalPass = await captureOptionalOCRPass(
         "original-full",
         null,
@@ -186,7 +242,10 @@ export async function extractTextFromImage(
     onProgress?.(78);
 
     const bestFullPage = combineOCRPasses(passes, failures).primaryFullPage;
-    if (shouldRunOCRComparison(bestFullPage)) {
+    if (
+      shouldRunOCRComparison(bestFullPage) ||
+      shouldRunFieldRecovery(passes, failures)
+    ) {
       const enhancedPass = await captureOptionalOCRPass(
         "grayscale-contrast-full",
         null,

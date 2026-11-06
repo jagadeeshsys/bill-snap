@@ -211,6 +211,40 @@ Important limitations:
 
 ## 7. Known OCR Test Results
 
+### Supplemental 34-image diagnostic (2026-11-06)
+
+- `ml-evaluation/test-manifest.json` records manually reviewed ground truth
+  for B1–B29 and NB1–NB5. B17 is a jewelry replacement valuation document,
+  not evidence of a purchase, so it is labeled not-bill.
+- `ml-evaluation/run-evaluation.mjs` applies Tesseract to each original image,
+  then invokes the app's bill classifier and field extractor. The raw OCR,
+  extracted fields, expected values, and review flags are stored in
+  `ml-evaluation/results/latest-run.json`; the per-image comparison is in
+  `ml-evaluation/results/evaluation_report.md`.
+- The run yielded 30/34 correct bill/not-bill/uncertain labels when uncertain
+  is counted as incorrect (88.2%). Merchant was exact on 7/28 evaluated
+  values, date on 16/27, total on 15/28, and category on 25/28. This is a
+  raw-source OCR diagnostic, not a browser/device end-to-end score: it does
+  not execute resize/compression, targeted header/total crops, original-image
+  comparison OCR, or contrast OCR.
+- The app's header crop now spans nearly the full image width because a
+  right-side-only crop can miss logos and merchant names on left/centered
+  layouts. The lower-page targeted pass can also fill a missing transaction
+  date, with the field marked for user review. Both crops remain fallbacks;
+  primary OCR fields are not overwritten.
+- The known New Asian Super Market OCR variants `ASTAN`, `ASIAN`, `MARKI`,
+  `MARKE`, and `SUEY MA` normalize to the retailer name. This is narrow
+  variant repair, not a general merchant-name solution.
+- Remaining weak cases include faint/angled merchant headers, handwritten
+  invoices, and OCR substitutions in totals. Example: B21 reads `Grand Total
+  21060.00` although the image shows `₹1060.00`; the extracted amount is low
+  confidence and needs correction. The algorithm should not silently guess
+  a replacement where OCR has changed the digits.
+- Two expected bills and two expected non-bills were uncertain; the app
+  should keep these out of save flow and request a clearer image. Future
+  accuracy claims should report the exact cohort and whether browser OCR
+  passes were executed.
+
 ## 8. Current Architecture and Project Decisions
 
 Inspect current source before relying on older sections above; this guide is
@@ -513,29 +547,29 @@ Report actual results. Do not fabricate accuracy percentages.
 
 ## 12. Current Development Priorities
 
-Priority 1:
-Fix camera versus gallery OCR inconsistency.
+The OCR recovery and extraction logic has been improved and measured against the current 34-image corpus. Remaining priorities are to improve merchant/date extraction on difficult photos, resolve the two bill images classified as uncertain, test the camera/gallery and local-save flows on a phone, and finish the assignment artifacts (recording and reflection).
 
-Priority 2:
-Improve merchant name extraction.
+## 15. OCR audit and fixes (6 November 2026)
 
-Priority 3:
-Improve final total amount extraction.
+The end-to-end browser-pipeline evaluator is `ml-evaluation/run-app-evaluation.mjs`; its labeled corpus is `ml-evaluation/test-manifest.json`. Run it with the app's Vite server at `http://127.0.0.1:5175/bill-snap/` and Chrome remote debugging at port 9222. It invokes the app's actual image preparation and OCR/classification/extraction services in headless Chrome using a 390×844 mobile viewport. The report is `ml-evaluation/results/app_evaluation_report.md`; raw per-image OCR text, field evidence, confidence, and review flags are in `ml-evaluation/results/app-run.json`.
 
-Priority 4:
-Improve category classification.
+This corpus contains 34 images (29 bills and 5 non-bills), including difficult, handwritten, and low-quality photos. The current browser-pipeline result is 29/34 correct classifications (85.3%). For the 28 bills with expected field labels, merchant is correct on 14/28, date on 19/27, total on 22/28, and category on 25/28. Classification uncertainty counts as incorrect; field comparison is exact after case/punctuation normalization, except totals are within 0.01. See the report for the complete per-image table. This automated browser run does not test camera hardware, gallery UI, manual correction, IndexedDB persistence, or a physical phone.
 
-Priority 5:
-Improve image preprocessing.
+Implemented fixes include:
+- Header OCR now covers the full receipt width; total OCR covers the middle and lower page as well as payment footers.
+- Original-resolution and contrast OCR can recover blank or weak fields even when the prepared image was not downscaled.
+- Alternate OCR passes can replace a field flagged for review when they provide stronger field evidence, while keeping primary OCR and provenance available.
+- Total parsing excludes quantity/weight rows and isolated item prices, favors explicit payable context, handles damaged `Grand Total` text, and recognizes `Net Payable`.
+- Date parsing repairs a common OCR confusion between a leading zero and `O`/`U` on a labeled date.
+- Merchant cleanup and category keywords were adjusted for observed OCR variants and false candidates.
+- Low-confidence or conflicting values remain marked for user review instead of being treated as reliable.
 
-Priority 6:
-Test all 20 images and record results.
+Known failures from the current run:
+- Two actual bills (B26 and B28) remain uncertain because OCR/classification evidence is weak; B19 is classified as a bill but all key fields are poor.
+- Three non-bill images (NB2, NB4, NB5) have too little OCR text to reach a confident negative classification; the app should ask for a clearer image instead of saving them as bills.
+- Merchant recognition remains the weakest field. B18's printed total is not recovered even with source-resolution and contrast OCR. B22's year is misread. B14's OCR amount is `14` instead of `14000`; it is flagged for review.
 
-Priority 7:
-Verify dashboard calculations and saved bill management.
-
-Priority 8:
-Prepare GitHub repository, README, screen recording, evaluation table, and product reflection.
+Verification after the fixes: `npm test` passes 177/177, `npm run lint` passes, `npm run build` passes, and `git diff --check` passes. These checks do not substitute for on-device camera, gallery, correction, or persistence checks.
 
 ## 13. Assignment Deliverables
 

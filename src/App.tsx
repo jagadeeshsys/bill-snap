@@ -356,13 +356,11 @@ function App() {
       const processed = await processBillImage(
         result.file,
         setProgress,
-        result.wasDownscaled ? file : undefined,
-        result.wasDownscaled
-          ? {
-              width: result.originalWidth,
-              height: result.originalHeight,
-            }
-          : undefined
+        file,
+        {
+          width: result.originalWidth,
+          height: result.originalHeight,
+        }
       );
 
       setOcrEvidence(processed.ocrEvidence);

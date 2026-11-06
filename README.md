@@ -134,17 +134,18 @@ build alone does not confirm a deployment.
 
 ## Receipt evaluation
 
-Evaluation records and protocols are in `ml-evaluation/results/`. The
-submission cohort is fixed at the 15 tracked bill images and 5 tracked
-non-bill images. `evaluation.csv` is retained historical evidence only; it is
-not a measurement of this release. Complete
-`evaluation_release_template.csv` from the production build before submission
-and use its explicit output, ground-truth, and correction columns to calculate
-the release report.
-
-The supplemental B16–B29 images are separate from the core cohort and require
-manual ground-truth verification before scoring. See the evaluation report
-and failure analysis for the evidence and limitations.
+Evaluation records, labels, raw OCR output, and reports are in
+`ml-evaluation/`. The browser-pipeline evaluation runs the app's image
+preparation, OCR, classifier, and field extractor against 34 images (29 bills
+and 5 non-bills). It measured 29/34 correct classifications; merchant, date,
+total, and category were correct on 14/28, 19/27, 22/28, and 25/28 labeled
+fields respectively. See
+[`app_evaluation_report.md`](ml-evaluation/results/app_evaluation_report.md)
+for the per-image results and
+[`app-run.json`](ml-evaluation/results/app-run.json) for OCR and field
+evidence. The primary 20-image evaluation and supplemental B16–B29 images are
+both included in the 34-image report. `evaluation.csv` remains historical
+evidence and is not a measurement of this release.
 
 ## Known limitations
 
