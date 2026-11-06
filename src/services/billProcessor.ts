@@ -54,8 +54,24 @@ export async function processBillImage(
 
     const billData = extractBillData(ocrResult);
 
+    // Classification and extraction are separate heuristics. Do not expose a
+    // saveable receipt form unless both agree that transaction evidence exists.
+    if (!billData.isBill) {
+      return {
+        success: false,
+        error: "We couldn't confirm this image contains a bill or receipt. Try a clearer, full-frame photo.",
+        data: null,
+        ocrConfidence: ocrResult.confidence,
+        classification: {
+          status: "uncertain",
+          reasons: ["Receipt classifier and field extractor disagreed."],
+        },
+        ocrEvidence: ocrResult,
+      };
+    }
+
     return {
-      success: true,
+      success: classification.status === "bill",
       error: null,
       data: billData,
       ocrConfidence: ocrResult.confidence,
