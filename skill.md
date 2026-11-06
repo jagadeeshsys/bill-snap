@@ -621,6 +621,12 @@ The goal is to deliver a reliable, explainable and honestly evaluated Bill Snap 
 
 The scan interaction is a focused workspace in `src/App.tsx` and `src/App.css`. Opening Scan hides the dashboard summaries and other sections; the user sees a clear camera or gallery choice. After selecting an image, the app shows the receipt preview next to the extracted details on desktop and stacks them on mobile. The preview is compact and opens at full size when tapped. Users can change or remove the photo.
 
-Review fields are grouped into Receipt information (merchant/date), Payment (total/currency), and Spending category. Field status uses short labels such as “Check this”, “Looks good”, and “Edited”; detailed OCR evidence stays collapsed. Saving clears the review and shows a local-save confirmation while keeping the scan workspace ready for another receipt.
+Review fields are grouped into Receipt information (merchant/date), Payment (total/currency), and Spending category. Field status uses short labels such as “Check this”, “Looks good”, and “Edited”; detailed OCR evidence stays collapsed. Saving clears the review, returns to Dashboard, and shows a local-save confirmation with refreshed spending outputs.
 
 Visual and interaction verification used B5 in headless Chrome at 390×844 mobile and 1365×900 desktop viewports: preview displayed, zoom overlay opened, fields appeared in the review workspace, and saving showed “Receipt saved to this device.” A 320px viewport check reported no horizontal overflow. `npm run lint`, `npm run build`, and `git diff --check` pass. These UI changes are local and have not been pushed or deployed.
+
+## 17. Dashboard output visibility fix (6 November 2026)
+
+The scanner-only view hid the dashboard after a receipt was saved because the active tab stayed on Scan Receipt. Successful saves now return to Dashboard and show the confirmation at the top. Dashboard receipts-saved count is all-time; spending insights default to All time. Expense, average, and category summaries show the current month when it has receipts, otherwise the latest month with saved receipts and a clear “Latest” period label. Budget spend remains calculated for the current month and selected budget currency.
+
+Browser verification used the saved B5 receipt dated 10 July 2026 while the current date was in November: it displayed GBP 15.85, one saved receipt, GBP 15.85 average, Groceries at 100%, and one all-time insight transaction. A subsequent UI save of a November test transaction returned to Dashboard and refreshed the monthly totals and insight count. Test profile data was isolated in the temporary browser profile. `npm test` passes 177/177; lint and production build pass.

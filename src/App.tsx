@@ -271,7 +271,7 @@ function App() {
   const [sortOrder, setSortOrder] =
     useState<ExpenseSortOrder>("newest");
   const [analyticsPeriod, setAnalyticsPeriod] =
-    useState<AnalyticsPeriod>("this-month");
+    useState<AnalyticsPeriod>("all-time");
   const [editingBill, setEditingBill] = useState<SavedBill | null>(null);
   const [editDraft, setEditDraft] = useState<BillEditDraft | null>(null);
   const [isUpdatingBill, setIsUpdatingBill] = useState(false);
@@ -505,6 +505,10 @@ function App() {
       setDuplicateWarning(null);
       removeImage();
       setSaveMessage("Receipt saved to this device.");
+      setActiveTab("Dashboard");
+      window.requestAnimationFrame(() =>
+        window.scrollTo({ top: 0, behavior: "smooth" })
+      );
     } catch (error) {
       if (error instanceof ProbableDuplicateBillError) {
         setDuplicateWarning(error.existingBill);
@@ -757,19 +761,38 @@ function App() {
     }
   };
 
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-
-  const monthlySummary = summarizeMonthlyBills(
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+  const currentMonthSummary = summarizeMonthlyBills(
     bills,
     currentMonth,
     currentYear
   );
-  const monthlyAnalytics = calculateSpendingAnalytics(
+  const latestSavedBillDate = bills.reduce<Date | null>((latest, bill) => {
+    const date = parseBillDate(bill.date);
+    return date && (!latest || date > latest) ? date : latest;
+  }, null);
+  const showingLatestMonth =
+    currentMonthSummary.count === 0 && latestSavedBillDate !== null;
+  const dashboardMonth =
+    showingLatestMonth && latestSavedBillDate ? latestSavedBillDate : today;
+  const dashboardSummary = summarizeMonthlyBills(
     bills,
-    "this-month"
+    dashboardMonth.getMonth(),
+    dashboardMonth.getFullYear()
   );
-  const budgetCurrencyAnalytics = monthlyAnalytics.currencies.find(
+  const dashboardAnalytics = calculateSpendingAnalytics(
+    bills,
+    "this-month",
+    dashboardMonth
+  );
+  const currentMonthAnalytics = calculateSpendingAnalytics(
+    bills,
+    "this-month",
+    today
+  );
+  const budgetCurrencyAnalytics = currentMonthAnalytics.currencies.find(
     (currency) => currency.currency === settings.budget.currency
   );
   const budgetSpent = budgetCurrencyAnalytics?.total ?? 0;
@@ -786,7 +809,13 @@ function App() {
     month: "long",
     year: "numeric",
   });
-  const today = new Date();
+  const dashboardDateLabel = dashboardMonth.toLocaleDateString("en-IN", {
+    month: "long",
+    year: "numeric",
+  });
+  const dashboardPeriodLabel = showingLatestMonth
+    ? `Latest · ${dashboardDateLabel}`
+    : dashboardDateLabel;
   const fullDateLabel = formatBillDate(
     `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`,
     settings.preferences.dateFormat
@@ -935,7 +964,9 @@ function App() {
                   : "Welcome back"}
               </h1>
               <p className="muted">
-                Here’s your spending overview for {dateLabel}.
+                {showingLatestMonth
+                  ? `Here’s your latest spending activity from ${dashboardDateLabel}.`
+                  : `Here’s your spending overview for ${dateLabel}.`}
               </p>
             </div>
             <button
@@ -947,26 +978,33 @@ function App() {
             </button>
           </section>
 
-          <section className="metric-grid" aria-label="Monthly summary">
+          {saveMessage && (
+            <div className="success-message dashboard-success-message" role="status">
+              <CheckCircle size={18} />
+              {saveMessage}
+            </div>
+          )}
+
+          <section className="metric-grid" aria-label="Spending summary">
             <article className="metric-card spending-metric">
               <div className="metric-topline">
                 <span className="metric-icon"><WalletCards size={19} /></span>
-                <span className="metric-period">{dateLabel}</span>
+                <span className="metric-period">{dashboardPeriodLabel}</span>
               </div>
               <p className="metric-label">Total expenses</p>
               <strong className="metric-value">
-                {monthlyAnalytics.currencies.length === 0
+                {dashboardAnalytics.currencies.length === 0
                   ? "No spending yet"
-                  : monthlyAnalytics.currencies.length === 1
+                  : dashboardAnalytics.currencies.length === 1
                     ? formatAnalyticsAmount(
-                        monthlyAnalytics.currencies[0].total,
-                        monthlyAnalytics.currencies[0].currency
+                        dashboardAnalytics.currencies[0].total,
+                        dashboardAnalytics.currencies[0].currency
                       )
                     : "Separate totals"}
               </strong>
-              {monthlyAnalytics.currencies.length > 1 ? (
+              {dashboardAnalytics.currencies.length > 1 ? (
                 <div className="metric-currency-list">
-                  {monthlyAnalytics.currencies.map((currency) => (
+                  {dashboardAnalytics.currencies.map((currency) => (
                     <span key={currency.currency ?? "unavailable"}>
                       {currency.currency ?? "Currency unavailable"}{" "}
                       <strong>
@@ -984,31 +1022,33 @@ function App() {
             <article className="metric-card">
               <div className="metric-topline">
                 <span className="metric-icon soft-green"><ReceiptText size={19} /></span>
-                <span className="metric-context">This month</span>
+                <span className="metric-context">All time</span>
               </div>
               <p className="metric-label">Receipts saved</p>
-              <strong className="metric-value">{monthlySummary.count}</strong>
-              <span className="metric-footnote">In your local workspace</span>
+              <strong className="metric-value">{bills.length}</strong>
+              <span className="metric-footnote">
+                {currentMonthSummary.count} this month · stored on this device
+              </span>
             </article>
             <article className="metric-card">
               <div className="metric-topline">
                 <span className="metric-icon soft-blue"><ChartNoAxesCombined size={19} /></span>
-                <span className="metric-context">This month</span>
+                <span className="metric-context">{dashboardPeriodLabel}</span>
               </div>
               <p className="metric-label">Average transaction</p>
               <strong className="metric-value">
-                {monthlyAnalytics.currencies.length === 0
+                {dashboardAnalytics.currencies.length === 0
                   ? "—"
-                  : monthlyAnalytics.currencies.length === 1
+                  : dashboardAnalytics.currencies.length === 1
                     ? formatAnalyticsAmount(
-                        monthlyAnalytics.currencies[0].average,
-                        monthlyAnalytics.currencies[0].currency
+                        dashboardAnalytics.currencies[0].average,
+                        dashboardAnalytics.currencies[0].currency
                       )
                     : "By currency"}
               </strong>
-              {monthlyAnalytics.currencies.length > 1 ? (
+              {dashboardAnalytics.currencies.length > 1 ? (
                 <div className="metric-currency-list">
-                  {monthlyAnalytics.currencies.map((currency) => (
+                  {dashboardAnalytics.currencies.map((currency) => (
                     <span key={currency.currency ?? "unavailable"}>
                       {currency.currency ?? "Currency unavailable"}{" "}
                       <strong>
@@ -1019,7 +1059,7 @@ function App() {
                 </div>
               ) : (
                 <span className="metric-footnote">
-                  {monthlySummary.count > 0
+                  {dashboardSummary.count > 0
                     ? "Across saved receipts"
                     : "Available after your first receipt"}
                 </span>
@@ -1096,9 +1136,9 @@ function App() {
                   <p className="card-kicker">MONTHLY BREAKDOWN</p>
                   <h2>Spending by category</h2>
                 </div>
-                <span className="card-period">{dateLabel}</span>
+                <span className="card-period">{dashboardPeriodLabel}</span>
               </div>
-              {monthlyAnalytics.currencies.length === 0 ? (
+              {dashboardAnalytics.currencies.length === 0 ? (
                 <div className="empty-state compact-empty">
                   <div className="empty-icon"><ChartNoAxesCombined size={20} /></div>
                   <strong>No spending to show yet</strong>
@@ -1106,7 +1146,7 @@ function App() {
                 </div>
               ) : (
                 <div className="category-list">
-                  {monthlyAnalytics.currencies.map((currency) => (
+                  {dashboardAnalytics.currencies.map((currency) => (
                     <div className="category-currency-group" key={currency.currency ?? "unavailable"}>
                       <p className="category-currency-heading">
                         {currency.currency ?? "Currency unavailable"}
@@ -1825,13 +1865,6 @@ function App() {
           <div className="error-message" role="alert">
             <AlertCircle size={18} />
             {imageError}
-          </div>
-        )}
-
-        {saveMessage && (
-          <div className="success-message" role="status">
-            <CheckCircle size={18} />
-            {saveMessage}
           </div>
         )}
 
