@@ -43,11 +43,25 @@ export interface ExtractedBillEvidence {
   total: ExtractionEvidence<number>;
 }
 
+export type CurrencyCode = "INR" | "GBP" | "USD" | "EUR";
+
+export interface ExtractedCurrency {
+  selectedAmount: number | null;
+  normalizedAmount: number | null;
+  code: CurrencyCode | null;
+  originalText: string | null;
+  confidence: "high" | "medium" | "low";
+  normalization: "certain" | "ambiguous" | "unavailable";
+  normalizationReason: string;
+  reason: string;
+}
+
 export interface ExtractedBill {
   isBill: boolean;
   merchant: ExtractedField<string>;
   date: ExtractedField<string>;
   total: ExtractedField<number>;
+  currency: ExtractedCurrency;
   category: ExtractedField<ExpenseCategory>;
   rawText: string;
   evidence: ExtractedBillEvidence;
@@ -878,6 +892,16 @@ interface MoneyCandidate {
   startIndex: number;
 }
 
+function parseEuropeanAmount(value: string): number | null {
+  const match =
+    /^(\d{1,3}(?:\.\d{3})+|\d+),(\d{1,2})$/.exec(value);
+  if (!match) return null;
+
+  const normalized = `${match[1].replace(/\./g, "")}.${match[2]}`;
+  const amount = Number(normalized);
+  return Number.isFinite(amount) ? amount : null;
+}
+
 function extractMoneyCandidates(line: string): MoneyCandidate[] {
   const amountPattern =
     /(?:^|[^\d.,\p{L}])(-\s*)?(?:₹|INR\b|Rs\.?)?\s*(-?\d[\d,]*(?:\.\d{1,2})?)(?![\d.,\p{L}])/giu;
@@ -900,18 +924,55 @@ function extractMoneyCandidates(line: string): MoneyCandidate[] {
     const value = Number(rawValue.replace(/,/g, ""));
 
     if (Number.isFinite(value) && value > 0 && value < 100000000) {
+      const numericOffset = match[0].search(/\d/);
+      const numericStart = match.index + numericOffset;
       const precedingCurrency =
-        /(?:₹|£|€|\$|(?:INR|GBP|EUR|USD|Rs\.?)\s*)$/i.exec(
-          line.slice(0, match.index)
+        /(?:(?:US\$|₹|£|€|\$|INR|GBP|EUR|USD|Rs\.?)(?:\s*[:.]?\s*)){1,3}$/i.exec(
+          line.slice(0, numericStart)
+        )?.[0] ?? "";
+      const trailingCurrency =
+        /^\s*(?:(?:US\$|₹|£|€|\b(?:INR|GBP|EUR|USD)\b|Rs\.?)(?:\s*[:.]?\s*)){1,3}(?!\p{L})/iu.exec(
+          line.slice(match.index + match[0].length)
         )?.[0] ?? "";
       amounts.push({
         value,
-        originalText: precedingCurrency
-          ? `${precedingCurrency}${match[0]}`.trim()
-          : match[0].trim(),
-        startIndex: Math.max(0, match.index - precedingCurrency.length),
+        originalText: `${precedingCurrency}${match[0]
+          .slice(numericOffset)}${trailingCurrency}`.trim(),
+        startIndex: precedingCurrency
+          ? numericStart - precedingCurrency.length
+          : numericStart,
       });
     }
+  }
+
+  const euroAmountPattern =
+    /(?:€|EUR\b)\s*[:.]?\s*(\d{1,3}(?:\.\d{3})+|\d+),(\d{1,2})(?![\d.,\p{L}])/giu;
+  for (const match of line.matchAll(euroAmountPattern)) {
+    const rawNumber = `${match[1]},${match[2]}`;
+    const value = parseEuropeanAmount(rawNumber);
+    if (value === null) continue;
+
+    const startIndex = match.index;
+    const endIndex = match.index + match[0].length;
+    amounts.push({
+      value,
+      originalText: line.slice(startIndex, endIndex).trim(),
+      startIndex,
+    });
+  }
+
+  const euroSuffixPattern =
+    /(?<![\d.,])(\d{1,3}(?:\.\d{3})+|\d+),(\d{1,2})\s*(?:€|EUR\b)(?!\p{L})/giu;
+  for (const match of line.matchAll(euroSuffixPattern)) {
+    const rawNumber = `${match[1]},${match[2]}`;
+    const value = parseEuropeanAmount(rawNumber);
+    if (value === null) continue;
+
+    amounts.push({
+      value,
+      originalText: match[0].trim(),
+      startIndex: match.index,
+    });
   }
 
   return amounts;
@@ -919,7 +980,7 @@ function extractMoneyCandidates(line: string): MoneyCandidate[] {
 
 function isStandaloneNearbyAmount(line: string): boolean {
   const amountOnlyPattern =
-    /^\s*(?:(?:₹|£|€|\$)\s*|(?:INR|GBP|EUR|USD|Rs\.?)\s*)?\d[\d,]*(?:\.\d{2})?(?:\s*\/-)?\s*$/i;
+    /^\s*(?:(?:US\$|₹|£|€|\$)\s*|(?:INR|GBP|EUR|USD|Rs\.?)\s*[:.]?\s*)?(?:\d[\d,]*(?:\.\d{2})?|\d{1,3}(?:\.\d{3})+,\d{1,2}|\d+,\d{1,2})(?:\s*(?:€|EUR))?(?:\s*\/-)?\s*$/i;
   const hasCurrency =
     /(?:₹|£|€|\$|\b(?:INR|GBP|EUR|USD|Rs\.?)\b)/i.test(line);
   const hasTwoDecimalPlaces = /\d[\d,]*\.\d{2}(?!\d)/.test(line);
@@ -1183,6 +1244,196 @@ function extractTotal(text: string): {
   };
 }
 
+function isValidGroupedInteger(value: string, separator: "," | "."): boolean {
+  const escapedSeparator = separator === "." ? "\\." : ",";
+  const westernGrouping = new RegExp(
+    `^\\d{1,3}(?:${escapedSeparator}\\d{3})+$`
+  );
+  const indianGrouping =
+    separator === "," && /^\d{1,2}(?:,\d{2})+,\d{3}$/.test(value);
+  return westernGrouping.test(value) || indianGrouping;
+}
+
+function normalizeSelectedAmount(
+  amountText: string,
+  currency: CurrencyCode | null
+): { value: number | null; status: ExtractedCurrency["normalization"]; reason: string } {
+  const numbers = amountText.match(/\d[\d.,]*/g) ?? [];
+  if (numbers.length !== 1) {
+    return {
+      value: null,
+      status: "unavailable",
+      reason: "selected amount text could not be isolated",
+    };
+  }
+
+  const raw = numbers[0];
+  const commas = [...raw.matchAll(/,/g)].length;
+  const periods = [...raw.matchAll(/\./g)].length;
+
+  if (commas > 0 && periods > 0) {
+    const decimalSeparator =
+      raw.lastIndexOf(",") > raw.lastIndexOf(".") ? "," : ".";
+    const groupingSeparator = decimalSeparator === "," ? "." : ",";
+    const decimalIndex = raw.lastIndexOf(decimalSeparator);
+    const integerPart = raw.slice(0, decimalIndex);
+    const fractionalPart = raw.slice(decimalIndex + 1);
+    const validGrouping =
+      !integerPart.includes(groupingSeparator) ||
+      isValidGroupedInteger(integerPart, groupingSeparator);
+
+    if (
+      !validGrouping ||
+      !/^\d{1,2}$/.test(fractionalPart) ||
+      integerPart.includes(decimalSeparator)
+    ) {
+      return {
+        value: null,
+        status: "ambiguous",
+        reason: "mixed separators do not form a supported amount format",
+      };
+    }
+
+    const value = Number(
+      `${integerPart.replace(/[.,]/g, "")}.${fractionalPart}`
+    );
+    return {
+      value,
+      status: "certain",
+      reason: "distinct thousands and decimal separators",
+    };
+  }
+
+  if (commas + periods === 0) {
+    return {
+      value: Number(raw),
+      status: "certain",
+      reason: "amount contains no separators",
+    };
+  }
+
+  const separator: "," | "." = commas > 0 ? "," : ".";
+  if ((commas > 1 || periods > 1) && isValidGroupedInteger(raw, separator)) {
+    return {
+      value: Number(raw.replace(/[.,]/g, "")),
+      status: "certain",
+      reason: "valid repeated thousands grouping",
+    };
+  }
+
+  const [integerPart, fractionalPart] = raw.split(separator);
+  if (!integerPart || !fractionalPart) {
+    return {
+      value: null,
+      status: "ambiguous",
+      reason: "separator placement is incomplete",
+    };
+  }
+
+  if (/^\d{1,2}$/.test(fractionalPart)) {
+    return {
+      value: Number(`${integerPart}.${fractionalPart}`),
+      status: "certain",
+      reason: "one or two trailing digits indicate decimal precision",
+    };
+  }
+
+  if (
+    /^\d{3}$/.test(fractionalPart) &&
+    isValidGroupedInteger(raw, separator) &&
+    currency !== null &&
+    ((separator === "," && currency !== "EUR") ||
+      (separator === "." && currency === "EUR"))
+  ) {
+    return {
+      value: Number(raw.replace(/[.,]/g, "")),
+      status: "certain",
+      reason: "grouping separator matches the detected currency convention",
+    };
+  }
+
+  return {
+    value: null,
+    status: "ambiguous",
+    reason: "three trailing digits could be decimal or thousands grouping",
+  };
+}
+
+function extractCurrency(
+  candidate: CandidateSource | null,
+  selectedAmount: number | null
+): ExtractedCurrency {
+  if (!candidate || selectedAmount === null) {
+    return {
+      selectedAmount,
+      normalizedAmount: null,
+      code: null,
+      originalText: null,
+      confidence: "low",
+      normalization: "unavailable",
+      normalizationReason: "no selected payable amount",
+      reason: "currency cannot be detected without a selected payable candidate",
+    };
+  }
+
+  const originalText = candidate.valueText;
+  const searchableText = [
+    candidate.valueText,
+    candidate.labelSourceLine !== candidate.sourceLine
+      ? candidate.labelSourceLine ?? ""
+      : "",
+  ].join(" ");
+  const currencies = new Set<CurrencyCode>();
+  let hasBareDollar = false;
+  const markerPattern =
+    /US\$|₹|£|€|\bINR\b|\bGBP\b|\bUSD\b|\bEUR\b|\bRs\.?|\$/giu;
+
+  for (const match of searchableText.matchAll(markerPattern)) {
+    const marker = match[0].toUpperCase();
+    if (marker === "$") {
+      hasBareDollar = true;
+    } else if (marker === "₹" || marker === "INR" || marker.startsWith("RS")) {
+      currencies.add("INR");
+    } else if (marker === "£" || marker === "GBP") {
+      currencies.add("GBP");
+    } else if (marker === "€" || marker === "EUR") {
+      currencies.add("EUR");
+    } else if (marker === "US$" || marker === "USD") {
+      currencies.add("USD");
+    }
+  }
+
+  let code: CurrencyCode | null = null;
+  let confidence: ExtractedCurrency["confidence"] = "low";
+  let reason: string;
+  if (
+    currencies.size > 1 ||
+    (hasBareDollar && currencies.size > 0 && !currencies.has("USD"))
+  ) {
+    reason = "conflicting currency indicators on the selected payable candidate";
+  } else if (currencies.size === 1) {
+    code = [...currencies][0];
+    confidence = "high";
+    reason = `currency identified by an explicit ${code} code or symbol`;
+  } else if (hasBareDollar) {
+    reason = "bare dollar symbol is ambiguous between currencies";
+  } else {
+    reason = "no reliable currency indicator on the selected payable candidate";
+  }
+
+  const normalized = normalizeSelectedAmount(originalText, code);
+  return {
+    selectedAmount,
+    normalizedAmount: normalized.value,
+    code,
+    originalText,
+    confidence,
+    normalization: normalized.status,
+    normalizationReason: normalized.reason,
+    reason,
+  };
+}
+
 // --------------------------------------------------
 // CATEGORY EXTRACTION
 // --------------------------------------------------
@@ -1262,6 +1513,7 @@ export function extractBillData(input: string | OCRResult): ExtractedBill {
   const merchant = merchantExtraction.field;
   const date = dateExtraction.field;
   const total = totalExtraction.field;
+  const currency = extractCurrency(totalExtraction.candidate, total.value);
   const evidence: ExtractedBillEvidence = {
     merchant: makeExtractionEvidence(
       "merchant",
@@ -1295,6 +1547,7 @@ export function extractBillData(input: string | OCRResult): ExtractedBill {
       merchant,
       date,
       total,
+      currency,
       category: makeField<ExpenseCategory>(null, "low"),
       rawText: text,
       evidence,
@@ -1308,6 +1561,7 @@ export function extractBillData(input: string | OCRResult): ExtractedBill {
     merchant,
     date,
     total,
+    currency,
     category,
     rawText: text,
     evidence,

@@ -97,6 +97,164 @@ test("parses Indian comma grouping and currency prefixes", () => {
   assert.equal(bill.total.value, 1234567.89);
 });
 
+test("detects supported currency codes and symbols without changing selected totals", () => {
+  const cases = [
+    ["Total ₹1,234.50", "INR", 1234.5],
+    ["Total Rs. 12,34,567.89", "INR", 1234567.89],
+    ["Total INR 1234.50", "INR", 1234.5],
+    ["Total £1,234.50", "GBP", 1234.5],
+    ["Total GBP 12.20", "GBP", 12.2],
+    ["Total US$1,234.50", "USD", 1234.5],
+    ["Total USD 1,234.50", "USD", 1234.5],
+    ["Total €1.234,50", "EUR", 1234.5],
+    ["Total 1.234,50 EUR", "EUR", 1234.5],
+    ["Total EUR: 1.234,50", "EUR", 1234.5],
+  ] as const;
+
+  for (const [text, code, expectedAmount] of cases) {
+    const bill = extractBillData(text);
+    assert.equal(bill.total.value, expectedAmount, text);
+    assert.equal(bill.currency.selectedAmount, expectedAmount, text);
+    assert.equal(bill.currency.normalizedAmount, expectedAmount, text);
+    assert.equal(bill.currency.code, code, text);
+    assert.equal(bill.currency.confidence, "high", text);
+    assert.equal(bill.currency.normalization, "certain", text);
+    assert.ok(bill.currency.originalText?.length, text);
+  }
+});
+
+test("preserves currency markers with punctuation and whitespace", () => {
+  const cases = [
+    ["Invoice Amount Payable USD: 1,234.50", "USD", "USD: 1,234.50", 1234.5],
+    ["Invoice Amount Payable GBP: 13.50", "GBP", "GBP: 13.50", 13.5],
+    ["Invoice Amount Payable EUR: 1.234,50", "EUR", "EUR: 1.234,50", 1234.5],
+    ["Invoice Amount Payable INR: ₹1,234.50", "INR", "INR: ₹1,234.50", 1234.5],
+    ["Total: USD 1,234.50", "USD", "USD 1,234.50", 1234.5],
+  ] as const;
+
+  for (const [text, code, originalText, expectedAmount] of cases) {
+    const bill = extractBillData(text);
+    assert.equal(bill.currency.code, code, text);
+    assert.equal(bill.currency.originalText, originalText, text);
+    assert.equal(bill.currency.normalizedAmount, expectedAmount, text);
+  }
+});
+
+test("keeps ambiguous bare dollar symbols from implying USD", () => {
+  const bill = extractBillData("Total $1,234.50");
+
+  assert.equal(bill.total.value, 1234.5);
+  assert.equal(bill.currency.code, null);
+  assert.equal(bill.currency.confidence, "low");
+  assert.equal(bill.currency.normalizedAmount, 1234.5);
+  assert.equal(bill.currency.normalization, "certain");
+  assert.match(bill.currency.reason, /bare dollar symbol is ambiguous/);
+});
+
+test("normalizes amounts without inventing a missing currency", () => {
+  const bill = extractBillData("Invoice Amount Payable 1234.50");
+
+  assert.equal(bill.total.value, 1234.5);
+  assert.equal(bill.currency.selectedAmount, 1234.5);
+  assert.equal(bill.currency.normalizedAmount, 1234.5);
+  assert.equal(bill.currency.code, null);
+  assert.equal(bill.currency.originalText, "1234.50");
+  assert.equal(bill.currency.normalization, "certain");
+});
+
+test("reports ambiguous separator normalization instead of guessing", () => {
+  const bill = extractBillData("Invoice Amount Payable 1,234");
+
+  assert.equal(bill.total.value, 1234);
+  assert.equal(bill.currency.normalizedAmount, null);
+  assert.equal(bill.currency.normalization, "ambiguous");
+});
+
+test("reports conflicting currency indicators on the selected amount", () => {
+  const bill = extractBillData("Invoice Amount Payable GBP 13.50 EUR");
+
+  assert.equal(bill.total.value, 13.5);
+  assert.equal(bill.currency.normalizedAmount, 13.5);
+  assert.equal(bill.currency.code, null);
+  assert.equal(bill.currency.confidence, "low");
+  assert.match(bill.currency.reason, /conflicting currency indicators/);
+});
+
+test("does not guess between conflicting currency codes", () => {
+  const bill = extractBillData("Invoice Amount Payable GBP USD 13.50");
+
+  assert.equal(bill.total.value, 13.5);
+  assert.equal(bill.currency.code, null);
+  assert.equal(bill.currency.confidence, "low");
+  assert.equal(bill.currency.originalText, "GBP USD 13.50");
+  assert.match(bill.currency.reason, /conflicting currency indicators/);
+});
+
+test("does not guess between conflicting currency symbols", () => {
+  const bill = extractBillData("Invoice Amount Payable £ €13.50");
+
+  assert.equal(bill.total.value, 13.5);
+  assert.equal(bill.currency.code, null);
+  assert.equal(bill.currency.confidence, "low");
+  assert.equal(bill.currency.originalText, "£ €13.50");
+  assert.match(bill.currency.reason, /conflicting currency indicators/);
+});
+
+test("does not guess when a currency code and symbol disagree", () => {
+  const bill = extractBillData("Invoice Amount Payable GBP €13.50");
+
+  assert.equal(bill.total.value, 13.5);
+  assert.equal(bill.currency.code, null);
+  assert.equal(bill.currency.confidence, "low");
+  assert.equal(bill.currency.originalText, "GBP €13.50");
+  assert.match(bill.currency.reason, /conflicting currency indicators/);
+});
+
+test("detects currency only from the selected payable candidate", () => {
+  const bill = extractBillData(
+    ["Net Amount INR 20.00", "Invoice Amount Payable GBP 13.50"].join("\n")
+  );
+
+  assert.equal(bill.total.value, 13.5);
+  assert.equal(bill.currency.code, "GBP");
+  assert.equal(bill.currency.normalizedAmount, 13.5);
+});
+
+test("ignores currency indicators on unrelated receipt lines", () => {
+  const bill = extractBillData(
+    [
+      "Receipt",
+      "Subtotal USD 25.00",
+      "Payment Received EUR 20.00",
+      "Invoice Amount Payable GBP 13.50",
+    ].join("\n")
+  );
+
+  assert.equal(bill.total.value, 13.5);
+  assert.equal(bill.currency.code, "GBP");
+  assert.equal(bill.currency.originalText, "GBP 13.50");
+});
+
+test("handles OCR punctuation and whitespace around explicit currency", () => {
+  const bill = extractBillData("Invoice Amount Payable:   GBP   13.50");
+
+  assert.equal(bill.total.value, 13.5);
+  assert.equal(bill.currency.code, "GBP");
+  assert.equal(bill.currency.normalizedAmount, 13.5);
+  assert.equal(bill.currency.normalization, "certain");
+});
+
+test("normalizes a European amount on the line following its payable label", () => {
+  const bill = extractBillData(
+    ["Invoice Amount Payable", "EUR: 1.234,50"].join("\n")
+  );
+
+  assert.equal(bill.total.value, 1234.5);
+  assert.equal(bill.currency.code, "EUR");
+  assert.equal(bill.currency.normalizedAmount, 1234.5);
+  assert.equal(bill.currency.originalText, "EUR: 1.234,50");
+});
+
 test("supports whole-rupee payable amounts", () => {
   const bill = extractBillData("Invoice Amount Payable: ₹2,841/-");
 
