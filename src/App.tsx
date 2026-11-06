@@ -43,6 +43,7 @@ import {
   markFieldUserCorrected,
   type ExtractedBill,
   type ExpenseCategory,
+  type CurrencyCode,
 } from "./services/extractor";
 import {
   deleteBill,
@@ -54,6 +55,7 @@ import {
   saveLocalSettings,
   resetLocalSettings,
   restoreLocalData,
+  normalizeSavedBillDate,
 } from "./services/storage";
 import type { SavedBill } from "./services/storage";
 import {
@@ -367,13 +369,9 @@ function App() {
 
       if (processed.classification?.status === "uncertain") {
         setImageError(
-          "We couldn't confidently identify this document as a bill. Try a clearer image, or review and correct the extracted details before saving."
+          "We couldn't confidently recognize a receipt in this image. Try a clearer, full-frame photo of the bill."
         );
         setOcrConfidence(processed.ocrConfidence);
-        setBillData(processed.data);
-        setTotalInput(
-          processed.data?.total.value?.toFixed(2) ?? ""
-        );
         return;
       }
 
@@ -412,54 +410,70 @@ function App() {
     setOcrEvidence(null);
   };
 
- 
+  const updateField = (
+    field: "merchant" | "date" | "total" | "category",
+    value: string | number | ExpenseCategory | null
+  ) => {
+    setBillData((previous) => {
+      if (!previous) return previous;
 
-const updateField = (
-  field: "merchant" | "date" | "total" | "category",
-  value: string | number | ExpenseCategory | null
-) => {
-  setBillData((previous) => {
-    if (!previous) return previous;
+      switch (field) {
+        case "merchant":
+          return {
+            ...previous,
+            merchant: markFieldUserCorrected(
+              previous.merchant,
+              value as string | null
+            ),
+          };
 
-    switch (field) {
-      case "merchant":
-        return {
-          ...previous,
-          merchant: markFieldUserCorrected(
-            previous.merchant,
-            value as string | null
-          ),
-        };
+        case "date":
+          return {
+            ...previous,
+            date: markFieldUserCorrected(
+              previous.date,
+              value as string | null
+            ),
+          };
 
-      case "date":
-        return {
-          ...previous,
-          date: markFieldUserCorrected(
-            previous.date,
-            value as string | null
-          ),
-        };
+        case "total":
+          return {
+            ...previous,
+            total: markFieldUserCorrected(
+              previous.total,
+              value as number | null
+            ),
+          };
 
-      case "total":
-        return {
-          ...previous,
-          total: markFieldUserCorrected(
-            previous.total,
-            value as number | null
-          ),
-        };
+        case "category":
+          return {
+            ...previous,
+            category: markFieldUserCorrected(
+              previous.category,
+              value as ExpenseCategory
+            ),
+          };
+      }
+    });
+  };
 
-      case "category":
-        return {
-          ...previous,
-          category: markFieldUserCorrected(
-            previous.category,
-            value as ExpenseCategory
-          ),
-        };
-    }
-  });
-};
+  const updateCurrency = (code: CurrencyCode | null) => {
+    setBillData((previous) =>
+      previous
+        ? {
+            ...previous,
+            currency: {
+              ...previous.currency,
+              code,
+              confidence: code ? "high" : "low",
+              reason: code
+                ? "Currency selected during receipt review."
+                : "Currency is unavailable; no currency was selected.",
+            },
+          }
+        : previous
+    );
+  };
 
 
   const saveCurrentBill = async (allowProbableDuplicate = false) => {
@@ -536,7 +550,7 @@ const updateField = (
     if (
       !editDraft.merchant.trim() ||
       !editDraft.date ||
-      !parseBillDate(editDraft.date) ||
+      !normalizeSavedBillDate(editDraft.date) ||
       !Number.isFinite(total) ||
       total <= 0
     ) {
@@ -552,7 +566,7 @@ const updateField = (
       await updateBill({
         ...editingBill,
         merchant: editDraft.merchant.trim(),
-        date: editDraft.date,
+        date: normalizeSavedBillDate(editDraft.date)!,
         total,
         category: editDraft.category,
       });
@@ -1961,16 +1975,21 @@ const updateField = (
                 id="bill-date"
                 className={`review-input${billData.date.needsReview ? " needs-attention" : ""}`}
                 value={billData.date.value ?? ""}
-                placeholder="Enter bill date"
+                placeholder="DD-MM-YYYY"
+                inputMode="numeric"
+                aria-describedby="bill-date-help"
                 onChange={(event) =>
                   updateField("date", event.target.value)
                 }
               />
+              <span id="bill-date-help" className="field-confidence">
+                Use DD-MM-YYYY or YYYY-MM-DD.
+              </span>
             </div>
 
             <div className="review-field">
               <label className="field-label" htmlFor="bill-total">
-                Total amount (₹)
+                Total amount
               </label>
               <span className={`field-confidence confidence-${billData.total.confidence}${billData.total.needsReview ? " needs-attention" : ""}${billData.total.userCorrected ? " user-corrected" : ""}`}>
                 {getFieldStatus(billData.total)}
@@ -2013,6 +2032,33 @@ const updateField = (
             </div>
 
             <div className="review-field">
+              <label className="field-label" htmlFor="bill-currency">
+                Currency
+              </label>
+              <span className={`field-confidence confidence-${billData.currency.confidence}`}>
+                {billData.currency.code
+                  ? `Detected ${billData.currency.code}. Change it if this is wrong.`
+                  : "Could not detect a currency. Choose one if it is shown on the receipt."}
+              </span>
+              <select
+                id="bill-currency"
+                className="review-input"
+                value={billData.currency.code ?? ""}
+                onChange={(event) =>
+                  updateCurrency(
+                    (event.target.value || null) as CurrencyCode | null
+                  )
+                }
+              >
+                <option value="">Currency unknown</option>
+                <option value="INR">INR — Indian rupee</option>
+                <option value="GBP">GBP — Pound sterling</option>
+                <option value="USD">USD — US dollar</option>
+                <option value="EUR">EUR — Euro</option>
+              </select>
+            </div>
+
+            <div className="review-field">
               <label className="field-label" htmlFor="bill-category">
                 Category
               </label>
@@ -2044,7 +2090,7 @@ const updateField = (
               disabled={
                 isSaving ||
                 !billData.merchant.value?.trim() ||
-                !billData.date.value?.trim() ||
+                !normalizeSavedBillDate(billData.date.value ?? "") ||
                 billData.total.value === null ||
                 !Number.isFinite(billData.total.value) ||
                 billData.total.value <= 0

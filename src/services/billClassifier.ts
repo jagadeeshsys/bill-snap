@@ -115,6 +115,26 @@ export function classifyBillText(text: string): BillClassification {
       reason: "Product-label wording detected without transaction evidence.",
       weight: 2,
     },
+    {
+      found:
+        /\b(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|period\s*no|lecture|semester|timetable)\b/i.test(
+          normalized
+        ) &&
+        /\b(?:am|pm|\d{1,2}:\d{2})\b/i.test(normalized),
+      reason: "Schedule or timetable wording detected.",
+      weight: 2,
+    },
+    {
+      found:
+        /\b(?:our\s*menu|starters|main\s*course|chef'?s\s*special|allergen)\b/i.test(
+          normalized
+        ) &&
+        !/\b(?:receipt|invoice|paid|payment|total\s*paid|amount\s*payable)\b/i.test(
+          normalized
+        ),
+      reason: "Menu wording detected without payment evidence.",
+      weight: 2,
+    },
   ];
 
   const foundPositive = positiveSignals.filter((signal) => signal.found);

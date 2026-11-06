@@ -111,17 +111,15 @@ npm run build
 
 ## PWA, network, and offline behavior
 
-The production build includes a web app manifest, app icons, and a service
-worker. The service worker precaches the built app shell and serves the
-single-page app entry point for in-scope navigation. It does not cache
-IndexedDB records or user receipt data.
+The production build includes a web app manifest, app icons, a service worker,
+and the local Tesseract worker, core, and English language model. The service
+worker precaches these files and serves the single-page app entry point for
+in-scope navigation. It does not cache IndexedDB records or user receipt data.
 
 The hosted app is served over HTTPS and can be installed from supported
-browsers. OCR assets are not included in the app-shell precache. Tesseract.js
-may need its worker and language assets from its configured external CDN, so
-OCR on a fresh offline session is not guaranteed. The app shell can load
-offline after it has been cached; that does not imply all OCR functionality is
-available offline.
+browsers. After the installed app has loaded once and its service worker has
+finished caching, scans can run without a network connection. Browser camera
+permission and available device storage still apply.
 
 ## GitHub Pages deployment
 
@@ -137,11 +135,12 @@ build alone does not confirm a deployment.
 ## Receipt evaluation
 
 Evaluation records and protocols are in `ml-evaluation/results/`. The
-20-image core cohort consists of 15 bill images and 5 non-bill images.
-`evaluation.csv` is a historical record; `evaluation_phase2_1.csv` is a
-prepared run file whose blank verified-ground-truth fields and unavailable
-predictions must not be interpreted as measured accuracy. The Phase 3 protocol
-and template define how to conduct a new run without overwriting history.
+submission cohort is fixed at the 15 tracked bill images and 5 tracked
+non-bill images. `evaluation.csv` is retained historical evidence only; it is
+not a measurement of this release. Complete
+`evaluation_release_template.csv` from the production build before submission
+and use its explicit output, ground-truth, and correction columns to calculate
+the release report.
 
 The supplemental B16–B29 images are separate from the core cohort and require
 manual ground-truth verification before scoring. See the evaluation report

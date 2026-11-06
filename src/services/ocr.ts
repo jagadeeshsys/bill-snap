@@ -1,4 +1,8 @@
 import { createWorker, PSM } from "tesseract.js";
+import workerPath from "tesseract.js/dist/worker.min.js?url";
+import coreScriptPath from "tesseract.js-core/tesseract-core-simd-lstm.wasm.js?url";
+import "tesseract.js-core/tesseract-core-simd-lstm.wasm?url";
+import engLanguageDataPath from "@tesseract.js-data/eng/4.0.0/eng.traineddata.gz?url";
 import { createGrayscaleContrastImage } from "./image";
 import {
   captureOptionalOCRPass,
@@ -15,7 +19,18 @@ import {
   createRetryablePromise,
 } from "./ocrRuntime";
 
-const workerManager = createRetryablePromise(() => createWorker("eng"));
+function assetDirectory(assetUrl: string): string {
+  return assetUrl.slice(0, assetUrl.lastIndexOf("/") + 1);
+}
+
+const workerManager = createRetryablePromise(() =>
+  createWorker("eng", undefined, {
+    workerPath,
+    corePath: assetDirectory(coreScriptPath),
+    langPath: assetDirectory(engLanguageDataPath),
+    gzip: true,
+  })
+);
 const enqueueWorkerOperation = createPromiseQueue();
 const HEADER_REGION = {
   left: 0.43,

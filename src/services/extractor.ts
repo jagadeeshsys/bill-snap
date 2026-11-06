@@ -82,7 +82,10 @@ const BILL_KEYWORDS = [
 
 const CATEGORY_KEYWORDS: Record<ExpenseCategory, string[]> = {
   Food: ["restaurant", "cafe", "food", "dining", "bakery"],
-  Groceries: ["supermarket", "grocery", "mart", "provisions"],
+  Groceries: [
+    "supermarket", "grocery", "mart", "provisions", "tesco",
+    "sainsbury", "sainsburys", "new asian super market",
+  ],
   Utilities: ["electricity", "water bill", "broadband", "internet"],
   Transport: [
     "petrol",

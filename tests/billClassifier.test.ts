@@ -70,6 +70,22 @@ test("rejects product-label OCR text without transaction evidence", () => {
   assert.equal(result.status, "not_bill");
 });
 
+test("rejects a timetable that has dates and times but no transaction evidence", () => {
+  const result = classifyBillText(
+    "College timetable Monday Tuesday Wednesday 09:00 AM Lecture Period No Semester"
+  );
+
+  assert.equal(result.status, "not_bill");
+});
+
+test("rejects a restaurant menu without proof of payment", () => {
+  const result = classifyBillText(
+    "Our Menu Starters Main Course Chef's Special Allergen information"
+  );
+
+  assert.equal(result.status, "not_bill");
+});
+
 test("returns uncertain for weak or unreadable OCR", () => {
   const result = classifyBillText("Store total 450");
 

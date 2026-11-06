@@ -35,11 +35,27 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{html,js,css,woff2}'],
+        globPatterns: ['**/*.{html,js,css,woff2,wasm,gz}'],
+        // The local English OCR model is intentionally precached for offline scans.
+        maximumFileSizeToCacheInBytes: 15 * 1024 * 1024,
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         navigateFallback: '/bill-snap/index.html',
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        assetFileNames: (asset) => {
+          const name = asset.name ?? ''
+          if (name.includes('traineddata') || name.includes('tesseract-core')) {
+            return 'ocr-assets/[name][extname]'
+          }
+          if (name === 'worker.min.js') return 'ocr-assets/[name][extname]'
+          return 'assets/[name]-[hash][extname]'
+        },
+      },
+    },
+  },
 })

@@ -20,6 +20,30 @@ export interface SaveBillOptions {
   allowProbableDuplicate?: boolean;
 }
 
+/** Normalizes a user-entered receipt date to the ISO date stored by the app. */
+export function normalizeSavedBillDate(value: string): string | null {
+  const trimmed = value.trim();
+  const dayFirst = /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/.exec(trimmed);
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(trimmed);
+  const parts = dayFirst
+    ? { day: Number(dayFirst[1]), month: Number(dayFirst[2]), year: Number(dayFirst[3]) }
+    : iso
+      ? { day: Number(iso[3]), month: Number(iso[2]), year: Number(iso[1]) }
+      : null;
+
+  if (!parts) return null;
+  const date = new Date(parts.year, parts.month - 1, parts.day);
+  if (
+    date.getFullYear() !== parts.year ||
+    date.getMonth() !== parts.month - 1 ||
+    date.getDate() !== parts.day
+  ) {
+    return null;
+  }
+
+  return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
+}
+
 export class ProbableDuplicateBillError extends Error {
   readonly existingBill: SavedBill;
 
@@ -75,16 +99,7 @@ function normalizeMerchant(merchant: string): string {
 }
 
 function normalizeBillDate(date: string): string {
-  const dayFirst = /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/.exec(
-    date.trim()
-  );
-
-  if (dayFirst) {
-    const [, day, month, year] = dayFirst;
-    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-  }
-
-  return date.trim();
+  return normalizeSavedBillDate(date) ?? date.trim();
 }
 
 function hasUsefulImageName(imageName: string): boolean {
@@ -133,10 +148,13 @@ export async function saveBill(
   imageName: string,
   options: SaveBillOptions = {}
 ): Promise<SavedBill> {
+  const normalizedDate = normalizeSavedBillDate(bill.date.value ?? "");
   if (
     !bill.merchant.value ||
-    !bill.date.value ||
+    !normalizedDate ||
     bill.total.value === null ||
+    !Number.isFinite(bill.total.value) ||
+    bill.total.value <= 0 ||
     !bill.category.value
   ) {
     throw new Error("Please complete all bill details before saving.");
@@ -145,7 +163,7 @@ export async function saveBill(
   const savedBill: SavedBill = {
     id: generateId(),
     merchant: bill.merchant.value,
-    date: bill.date.value,
+    date: normalizedDate,
     total: bill.total.value,
     category: bill.category.value,
     ...(bill.currency.code ? { currency: bill.currency.code } : {}),
@@ -358,10 +376,11 @@ export async function restoreLocalData(
 }
 
 export async function updateBill(bill: SavedBill): Promise<SavedBill> {
+  const normalizedDate = normalizeSavedBillDate(bill.date);
   if (
     !bill.id ||
     !bill.merchant.trim() ||
-    !bill.date.trim() ||
+    !normalizedDate ||
     !Number.isFinite(bill.total) ||
     bill.total <= 0 ||
     !bill.category.trim()
@@ -369,13 +388,14 @@ export async function updateBill(bill: SavedBill): Promise<SavedBill> {
     throw new Error("Please complete all bill details before saving.");
   }
 
+  const normalizedBill = { ...bill, date: normalizedDate };
   const db = await openDatabase();
 
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_NAME, "readwrite");
     const store = transaction.objectStore(STORE_NAME);
     let updateError: Error | null = null;
-    const request = store.get(bill.id);
+    const request = store.get(normalizedBill.id);
 
     request.onsuccess = () => {
       if (!request.result) {
@@ -384,12 +404,12 @@ export async function updateBill(bill: SavedBill): Promise<SavedBill> {
         return;
       }
 
-      store.put(bill);
+      store.put(normalizedBill);
     };
 
     transaction.oncomplete = () => {
       db.close();
-      resolve(bill);
+      resolve(normalizedBill);
     };
 
     transaction.onerror = () => {

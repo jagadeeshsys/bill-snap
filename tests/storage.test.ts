@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { findProbableDuplicate } from "../src/services/storage.ts";
+import {
+  findProbableDuplicate,
+  normalizeSavedBillDate,
+} from "../src/services/storage.ts";
 import type { SavedBill } from "../src/services/storage.ts";
 
 function makeSavedBill(overrides: Partial<SavedBill> = {}): SavedBill {
@@ -15,6 +18,13 @@ function makeSavedBill(overrides: Partial<SavedBill> = {}): SavedBill {
     ...overrides,
   };
 }
+
+test("normalizes valid receipt dates and rejects invalid calendar dates", () => {
+  assert.equal(normalizeSavedBillDate("05-11-2026"), "2026-11-05");
+  assert.equal(normalizeSavedBillDate("2026-11-05"), "2026-11-05");
+  assert.equal(normalizeSavedBillDate("31-02-2026"), null);
+  assert.equal(normalizeSavedBillDate("not a date"), null);
+});
 
 test("detects normalized merchant/date duplicates with small OCR amount differences", () => {
   const duplicate = findProbableDuplicate(
