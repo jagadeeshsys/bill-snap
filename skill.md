@@ -211,6 +211,94 @@ Important limitations:
 
 ## 7. Known OCR Test Results
 
+## 8. Current Architecture and Project Decisions
+
+Inspect current source before relying on older sections above; this guide is
+an evolving project handoff, and historical observations may no longer match
+the latest implementation.
+
+### Current architecture
+
+- The app is a React 19 + TypeScript PWA built with Vite and deployed to
+  GitHub Pages under `/bill-snap/`.
+- `src/App.tsx` coordinates capture/upload, review, transactions, analytics,
+  settings, CSV export, and local backup/restore.
+- `src/services/image.ts` validates and downsizes images; `ocr.ts` runs
+  Tesseract and collects OCR pass/geometry evidence; `billClassifier.ts`
+  classifies OCR text; `extractor.ts` selects merchant, date, payable total,
+  currency, and category.
+- `src/services/storage.ts` stores receipt records and settings in IndexedDB.
+  Receipt image bytes are not retained.
+- The English Tesseract worker, engine, and trained data are bundled and
+  precached by the PWA. This adds roughly 17 MB to the offline cache.
+- No server/API is used by the app. The `server/` folder is currently unused.
+
+### Important behavior decisions
+
+- A clearly non-bill image is rejected politely. An uncertain image is also
+  blocked from the editable/save flow and asks the user to try a clearer,
+  full-frame image.
+- Confirmed bills go to a manual review screen. Field confidence is a
+  heuristic, not a calibrated probability; OCR confidence is not field
+  correctness.
+- Dates are validated and normalized as ISO dates before persistence.
+- Currency is detected when possible and can be selected or corrected in the
+  review screen. Unknown currency remains unknown rather than defaulting to
+  INR.
+- Saved receipt metadata and settings are local to the browser profile/device.
+  Clearing browser data or losing the device can remove them; users can export
+  a JSON backup.
+
+### Evaluation status and evidence
+
+- The intended fixed evaluation cohort is `B1`–`B15` and `NB1`–`NB5` under
+  `ml-evaluation/test-images/`.
+- `ml-evaluation/results/evaluation.csv` is historical and must not be
+  described as current-release accuracy.
+- `ml-evaluation/results/evaluation_release_template.csv` is the run sheet for
+  recording initial outputs, verified ground truth, field outcomes, corrections,
+  build commit, device/browser, and date.
+- `ml-evaluation/results/evaluation_report.md` gives the protocol. No fresh
+  release accuracy should be claimed until that run sheet is completed.
+- Untracked supplemental images `B16`–`B29` are outside the fixed 20-image
+  cohort until ground truth is verified and the files are intentionally added.
+
+### Recent B5 receipt fix
+
+For the OCR text from B5 (New Asian Super Market, Ipswich), the OCR engine had
+recognized enough information but the heuristics missed a UK-style retail
+receipt:
+
+- `NEW ASTAN SUPER MARKI` is now repaired to `NEW ASIAN SUPER MARKET` for this
+  specific known OCR variant.
+- `Sale Date` is recognized as a transaction date label.
+- A damaged generic total line is not trusted as a numeric total; when there
+  is no reliable labeled total, an explicit card/payment amount can be used.
+- `£15.85` is detected as GBP, and the retailer maps to Groceries.
+- The classifier accepts this receipt from its price/item/payment evidence.
+- A regression test uses the supplied OCR sample so these fields remain
+  reproducible. It expects merchant `NEW ASIAN SUPER MARKET`, date
+  `10-07-2026`, total `15.85`, currency `GBP`, and category `Groceries`.
+
+Be conservative when generalizing these fixes: do not let weak card, voucher,
+or amount text alone classify arbitrary images as bills, and do not let a
+payment amount override a readable, higher-confidence labeled payable total.
+
+### Useful commands
+
+```bash
+npm test
+npm run lint
+npm run build
+npm run dev
+npm run preview
+```
+
+Before committing, inspect `git status --short`. Keep user-provided untracked
+files out of commits unless the user requests they be added.
+
+## 9. Known OCR Test Results
+
 ### Test 1: Nidhi Motors
 
 Invoice merchant:

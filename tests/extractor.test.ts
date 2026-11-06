@@ -1360,3 +1360,33 @@ test("keeps evidence tied to processed-full when an alternate pass conflicts", (
   assert.deepEqual(bill.evidence.total.sourceBlockIds, ["block-0"]);
   assert.equal(bill.evidence.total.originalText, "₹350.00");
 });
+
+test("extracts a retail receipt when the printed total is damaged but card payment is clear", () => {
+  const text = [
+    "NEW ASTAN SUPER MARKI",
+    "T",
+    "53-61 CARR STREET",
+    "IPSWICH IP4 HB",
+    "Sale Date: 10/07/2026 18:51:11",
+    "EX PRICE(E) QTY TOTAL(E)",
+    "HOLLY 2.99/kg 0.534kg 1.60",
+    "FLAT BEANS 8.99/kg 0.316kg 2.56",
+    "TOTAL : i SE 85)",
+    "CARD < £15.85",
+    "MASTERCARD",
+    "Auth Code: R02089",
+  ].join("\n");
+
+  const bill = extractBillData(text);
+
+  assert.equal(classifyBillText(text).status, "bill");
+  assert.equal(bill.merchant.value, "NEW ASIAN SUPER MARKET");
+  assert.equal(bill.date.value, "10-07-2026");
+  assert.equal(bill.total.value, 15.85);
+  assert.equal(bill.currency.code, "GBP");
+  assert.equal(bill.category.value, "Groceries");
+  assert.equal(
+    bill.evidence.total.reason,
+    "card or payment amount used after no labelled total was recognized"
+  );
+});

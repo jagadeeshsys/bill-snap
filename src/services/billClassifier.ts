@@ -47,7 +47,7 @@ export function classifyBillText(text: string): BillClassification {
     },
     {
       found:
-        /\b(?:item\s*description|description\s+of\s+(?:goods|services)|particulars|qty|quantity|hsn|sac|unit\s*price|service\s+charges)\b/i.test(
+        /\b(?:item\s*description|description\s+of\s+(?:goods|services)|particulars|qty|quantity|hsn|sac|unit\s*price|price|service\s+charges)\b/i.test(
           normalized
         ) ||
         lines.some(
@@ -60,7 +60,7 @@ export function classifyBillText(text: string): BillClassification {
     },
     {
       found:
-        /(?:₹|rs\.?|inr)\s*\d|(?:\b\d{1,3}(?:,\d{3})+|\b\d+)\.\d{2}\b/i.test(
+        /(?:₹|£|€|\$|rs\.?|inr|gbp|usd|eur)\s*\d|(?:\b\d{1,3}(?:,\d{3})+|\b\d+)\.\d{2}\b/i.test(
           normalized
         ),
       reason: "Currency amount detected.",
@@ -76,7 +76,7 @@ export function classifyBillText(text: string): BillClassification {
     },
     {
       found:
-        /\b(?:gst(?:in|st)?|cgst|sgst|igst|tax\s*(?:amount|rate|invoice)|payment\s*(?:method|mode|received|status)|paid\s*(?:by|in|amount)|change\s*due)\b/i.test(
+        /\b(?:gst(?:in|st)?|cgst|sgst|igst|tax\s*(?:amount|rate|invoice)|payment\s*(?:method|mode|received|status)|paid\s*(?:by|in|amount)|change\s*due|card|visa|mastercard|contactless|auth(?:orization)?\s*code|voucher)\b/i.test(
           normalized
         ),
       reason: "Tax, GST, or payment detail detected.",
@@ -147,7 +147,7 @@ export function classifyBillText(text: string): BillClassification {
     (score, signal) => score + signal.weight,
     0
   );
-  const [headerSignal, merchantSignal, itemSignal, amountSignal, totalSignal] =
+  const [headerSignal, merchantSignal, itemSignal, amountSignal, totalSignal, paymentSignal] =
     positiveSignals;
   const hasHeader = headerSignal.found;
   const hasAmount = amountSignal.found;
@@ -155,9 +155,10 @@ export function classifyBillText(text: string): BillClassification {
   const hasBusinessOrItemDetails =
     merchantSignal.found || itemSignal.found;
   const hasStrongBillEvidence =
-    positiveScore >= 4 &&
+    positiveScore >= 3 &&
     ((hasHeader && (hasAmount || hasFinalTotal || hasBusinessOrItemDetails)) ||
-      (hasFinalTotal && hasAmount && hasBusinessOrItemDetails));
+      (hasFinalTotal && hasAmount && hasBusinessOrItemDetails) ||
+      (hasAmount && hasBusinessOrItemDetails && paymentSignal.found));
   const reasons = [
     ...foundPositive.filter((signal) => signal.found).map((signal) => signal.reason),
     ...foundNonBill.filter((signal) => signal.found).map((signal) => signal.reason),

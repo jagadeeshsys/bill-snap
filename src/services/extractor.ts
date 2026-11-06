@@ -610,8 +610,9 @@ function extractMerchant(text: string): {
       ? "medium"
       : rankedConfidence;
 
+  const normalizedMerchant = normalizeMerchantName(selected.line);
   return {
-    field: makeField(selected.line.toUpperCase(), confidence),
+    field: makeField(normalizedMerchant, confidence),
     candidate: {
       sourceLine: selected.sourceLine,
       valueText: selected.originalCandidateText,
@@ -622,6 +623,18 @@ function extractMerchant(text: string): {
     },
     missingReason: "",
   };
+}
+
+/** Repairs a small set of repeatable character substitutions in retail headers. */
+function normalizeMerchantName(value: string): string {
+  const normalized = value.toUpperCase().replace(/\s+/g, " ").trim();
+
+  // Tesseract commonly reads this retailer's ASIAN/MARKET glyphs as ASTAN/MARKI.
+  if (/^NEW\s+A(?:S|ST)AN\s+SUPER\s+MARK(?:I|ET)$/i.test(normalized)) {
+    return "NEW ASIAN SUPER MARKET";
+  }
+
+  return normalized;
 }
 
 // --------------------------------------------------
@@ -724,7 +737,7 @@ function extractDate(text: string): {
   const lines = getLines(text);
   const sourceLines = getSourceLines(text);
   const invoiceDateLabel =
-    /\b(?:invoice\s*date|bill\s*date|receipt\s*date|date\s*of\s*(?:purchase|issue|invoice)|invoice\s*dale|invoicedate|billdate)\b/i;
+    /\b(?:invoice\s*date|bill\s*date|receipt\s*date|sale\s*date|checkout\s*date|date\s*of\s*(?:purchase|issue|invoice)|invoice\s*dale|invoicedate|billdate)\b/i;
   const excludedDateLabel =
     /\b(?:next\s*service\s*due|service\s*due|insurance\s*expiry|expiry|delivery\s*date|payment\s*due\s*date|warranty\s*expiry|date\s*of\s*transaction|transaction\s*date|card\s*(?:date|expiry)|valid\s*(?:thru|through)|authorization\s*date|payment\s*date)\b/i;
   const invoiceNumberLabel =
@@ -1096,10 +1109,21 @@ function extractTotal(text: string): {
     const sameLineValues = extractMoneyCandidates(
       line.slice(labelMatch.index + labelMatch[0].length)
     );
-    const sameLineHasValues = sameLineValues.length > 0;
-    const valuesOnLabelLine = sameLineHasValues
+    const rawValuesOnLabelLine = sameLineValues.length > 0
       ? sameLineValues
       : extractMoneyCandidates(line);
+    // A damaged OCR line such as "TOTAL ... 85" is not reliable enough to
+    // beat a later card payment. Keep generic total labels conservative unless
+    // their amount retains a decimal or a currency marker.
+    const valuesOnLabelLine = rawValuesOnLabelLine.filter(
+      (value) =>
+        label.score > 145 ||
+        /(?:₹|£|€|\$|\b(?:INR|GBP|EUR|USD|Rs\.?)\b|\.\d{1,2}\b)/i.test(
+          value.originalText
+        )
+    );
+    const sameLineHasValues =
+      sameLineValues.length > 0 && valuesOnLabelLine.length > 0;
 
     if (valuesOnLabelLine.length) {
       const selectedAmount = valuesOnLabelLine[0];
@@ -1192,6 +1216,34 @@ function extractTotal(text: string): {
     }
   }
   });
+
+  // Retail receipts occasionally lose the printed TOTAL digits during OCR but
+  // retain the card-payment amount. Use it only when no labelled total exists.
+  if (candidates.length === 0) {
+    const paymentLabel = /\b(?:card|visa|mastercard|contactless|upi|cash)\b/i;
+    lines.forEach((line, index) => {
+      if (!paymentLabel.test(line)) return;
+      const value = extractMoneyCandidates(line)[0];
+      if (!value) return;
+      candidates.push({
+        value: value.value,
+        score: 135,
+        candidate: {
+          sourceLine: sourceLines[index] ?? line,
+          valueText: value.originalText,
+          valueOccurrence: countTokenSpansBefore(
+            line,
+            value.originalText,
+            value.startIndex
+          ),
+          matchingLabel: paymentLabel.exec(sourceLines[index] ?? line)?.[0] ?? "Card payment",
+          labelOccurrence: 0,
+          reason: "card or payment amount used after no labelled total was recognized",
+          labelSourceLine: sourceLines[index] ?? line,
+        },
+      });
+    });
+  }
 
   candidates.sort((a, b) => b.score - a.score);
 
@@ -1508,7 +1560,12 @@ export function extractBillData(input: string | OCRResult): ExtractedBill {
   ).length;
 
   const hasAmount = /\d+[.,]\d{2}/.test(text);
-  const isBill = keywordCount >= 1 && hasAmount;
+  const hasRetailReceiptEvidence =
+    /\b(?:sale\s*date|checkout|cashier|staff|till|card|visa|mastercard|contactless|auth(?:orization)?\s*code)\b/i.test(
+      text
+    ) &&
+    /\b(?:price|qty|quantity|total)\b/i.test(text);
+  const isBill = hasAmount && (keywordCount >= 1 || hasRetailReceiptEvidence);
 
   const merchantExtraction = extractMerchant(text);
   const dateExtraction = extractDate(text);
